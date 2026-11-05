@@ -46,6 +46,8 @@ def parser():
         commands.add_parser(name)
     ask = commands.add_parser("ask")
     ask.add_argument("question", nargs="+")
+    propose = commands.add_parser("propose")
+    propose.add_argument("question", nargs="+")
     plan = commands.add_parser("plan")
     action = plan.add_subparsers(dest="action", required=True)
     hostname = action.add_parser("hostname")
@@ -112,6 +114,9 @@ def main(argv=None):
             print(Path("/run/chromax/token").read_text().strip())
         elif args.command == "ask":
             print(safe_text(api("/v1/ask", {"question": " ".join(args.question)})["answer"]))
+        elif args.command == "propose":
+            result = api("/v1/propose", {"question": " ".join(args.question)})
+            print(f"Review: {result['summary']}\nApply: sudo chromaxctl apply {result['id']} --confirm {result['id']}")
         elif args.command == "chat":
             print("Chromax assistant. Type /quit to leave. Each question receives a fresh system snapshot.")
             while True:

@@ -126,14 +126,19 @@ class Handler(BaseHTTPRequestHandler):
             if not isinstance(body, dict):
                 raise ChromaxError("Request must be a JSON object")
             path = urlsplit(self.path).path
-            if path == "/v1/ask":
+            if path in ("/v1/ask", "/v1/propose"):
                 if not self.server.inference_lock.acquire(blocking=False):
                     return self.respond(429, {"error": "The assistant is busy; try again shortly"})
                 try:
-                    answer = backend.ask(body.get("question"), system.status(), config.load(self.server.config_path))
+                    if path == "/v1/ask":
+                        answer = backend.ask(body.get("question"), system.status(), config.load(self.server.config_path))
+                    else:
+                        proposal = backend.propose(body.get("question"), system.status(), config.load(self.server.config_path))
                 finally:
                     self.server.inference_lock.release()
-                return self.respond(200, {"answer": answer})
+                if path == "/v1/ask":
+                    return self.respond(200, {"answer": answer})
+                return self.respond(201, actions.create(self.server.state, proposal["action"], proposal["arguments"]))
             if path == "/v1/plans":
                 return self.respond(201, actions.create(self.server.state, body.get("action"), body.get("arguments")))
             return self.respond(404, {"error": "Unknown endpoint; plans can only be applied from the local CLI"})

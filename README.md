@@ -15,6 +15,8 @@ remaining gates are recorded in [docs/STATUS.md](docs/STATUS.md).
 - Linux 6.18.60, musl, BusyBox init and shell, DHCP, TLS trust, curl, Git, SSH,
   sudo, nano, htop, filesystem and networking tools.
 - `ai ask` and `ai chat`, with a fresh system snapshot for each question.
+- `ai propose`, translating a natural-language request into a validated pending
+  plan. Model output still cannot execute an action.
 - A browser console with system metrics, AI chat and reviewable system plans.
 - CPU inference through a source-built llama.cpp server and explicit GGUF model
   provisioning. Remote compatible endpoints require an explicit HTTPS opt-in.

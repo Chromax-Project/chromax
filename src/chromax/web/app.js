@@ -65,9 +65,22 @@ document.querySelectorAll('[data-question]').forEach(button => button.addEventLi
 async function plan(action, args) {
   try {
     const p = await api('/v1/plans', { action, arguments: args });
-    $('plan').hidden = false;
-    $('plan').textContent = p.summary + '\n\nReview and apply in your local console:\nsudo chromaxctl apply ' + p.id + ' --confirm ' + p.id + '\n\nExpires in 15 minutes. No change has been made.';
+    showPlan(p);
   } catch (error) { notice(error.message); }
 }
+function showPlan(p) {
+  $('plan').hidden = false;
+  $('plan').textContent = p.summary + '\n\nReview and apply in your local console:\nsudo chromaxctl apply ' + p.id + ' --confirm ' + p.id + '\n\nExpires in 15 minutes. No change has been made.';
+}
+$('propose').addEventListener('click', async () => {
+  const question = $('question').value.trim();
+  if (!question) { notice('Describe the change you want to prepare.'); return; }
+  $('propose').disabled = true; notice('');
+  try {
+    const p = await api('/v1/propose', { question }); showPlan(p);
+    message('assistant', 'Prepared: ' + p.summary + '. Review the plan under System actions, then apply it from your local console.');
+  } catch (error) { notice(error.message); }
+  finally { $('propose').disabled = false; }
+});
 $('hostname-form').addEventListener('submit', event => { event.preventDefault(); plan('hostname', { name: $('hostname').value.trim() }); });
 $('service-form').addEventListener('submit', event => { event.preventDefault(); plan('service-restart', { service: $('service').value }); });

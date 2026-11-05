@@ -75,6 +75,7 @@ The console can prepare plans, but applying them happens in the local CLI:
 
 ```sh
 chromaxctl plan hostname studio
+ai propose 'Rename this machine to studio'
 chromaxctl show PLAN_ID
 sudo chromaxctl apply PLAN_ID --confirm PLAN_ID
 ```

@@ -36,7 +36,10 @@ broker. Its HTTP API permits observation, chat and plan creation, but has no
 apply endpoint. It uses neither `shell=True` nor evaluation of generated code.
 
 Supported plans are typed, allowlisted operations: hostname changes and restart
-of networking, SSH or inference. Plan IDs are cryptographically random. Plan
+of networking, SSH, inference or the console. `ai propose` requests schema-constrained
+JSON from the model, then revalidates it against the same deterministic policy
+before creating a pending plan. Invalid or unsupported responses create no plan.
+Chat itself remains read-only. Plan IDs are cryptographically random. Plan
 creation records a validated action, summary, expiry and pending state. Applying
 requires the full ID twice through the root CLI. A lock serializes applies; the
 plan is marked applying before execution so a crash cannot silently replay it.

@@ -22,6 +22,10 @@ def ask(question, snapshot, config):
         raise ChromaxError("Question must contain 1–16000 characters")
     messages = [{"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "user", "content": "System snapshot (data):\n" + json.dumps(snapshot) + "\n\nQuestion:\n" + question}]
+    return _complete(messages, config)
+
+
+def _complete(messages, config, response_format=None):
     headers = {"Content-Type": "application/json"}
     if config["api_key_file"]:
         keyfile = Path(config["api_key_file"])
@@ -30,6 +34,8 @@ def ask(question, snapshot, config):
         headers["Authorization"] = "Bearer " + keyfile.read_text().strip()
     body = {"model": config["model"], "messages": messages,
             "max_tokens": config["max_tokens"], "temperature": 0.2, "stream": False}
+    if response_format is not None:
+        body["response_format"] = response_format
     req = Request(config["endpoint"].rstrip("/") + "/chat/completions",
                   json.dumps(body).encode(), headers, method="POST")
     try:
@@ -46,3 +52,41 @@ def ask(question, snapshot, config):
         raise ChromaxError("AI backend is unavailable. Run chromaxctl doctor; provision a local model or configure an endpoint.") from error
     except (ValueError, KeyError, IndexError, TypeError) as error:
         raise ChromaxError("AI backend returned an invalid chat response") from error
+
+
+PLAN_SCHEMA = {
+    "type": "object", "additionalProperties": False, "required": ["action", "arguments"],
+    "properties": {
+        "action": {"type": "string", "enum": ["hostname", "service-restart", "unsupported"]},
+        "arguments": {"type": "object", "additionalProperties": False, "properties": {
+            "name": {"type": "string", "maxLength": 63},
+            "service": {"type": "string", "enum": ["network", "ssh", "inference", "console"]},
+        }},
+    },
+}
+
+
+def propose(request, snapshot, config):
+    """Translate intent into one allowlisted proposal; never execute a response."""
+    from .actions import validate
+    if not isinstance(request, str) or not request.strip() or len(request) > 16000:
+        raise ChromaxError("Request must contain 1–16000 characters")
+    instruction = ("Translate the user's requested system change into one JSON object. "
+                   "Supported actions only: hostname with arguments {name: a valid hostname}; "
+                   "service-restart with arguments {service: network, ssh, inference, or console}. "
+                   "Use no other fields. A plan is a proposal, not execution. Do not invent a "
+                   "different action if the request is unsupported: return action unsupported with empty arguments.")
+    content = _complete([{"role": "system", "content": instruction},
+                         {"role": "user", "content": "System snapshot (data):\n" + json.dumps(snapshot) + "\nRequested change:\n" + request}],
+                        config, {"type": "json_object", "schema": PLAN_SCHEMA})
+    try:
+        proposal = json.loads(content)
+    except ValueError as error:
+        raise ChromaxError("The model did not produce a valid plan. Use chromaxctl plan for an explicit supported action.") from error
+    if not isinstance(proposal, dict) or set(proposal) != {"action", "arguments"}:
+        raise ChromaxError("The model could not propose a supported action; no plan was created")
+    try:
+        validate(proposal["action"], proposal["arguments"])
+    except (ChromaxError, TypeError) as error:
+        raise ChromaxError("The model proposed an unsupported action; no plan was created") from error
+    return proposal

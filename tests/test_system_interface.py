@@ -151,6 +151,18 @@ class BackendTests(TemporaryTest):
         with self.assertRaises(ChromaxError):
             backend.ask("hello", {}, cfg)
 
+    def test_model_proposal_is_typed_and_does_not_execute(self):
+        cfg = self.start_backend({"choices": [{"message": {"content": '{"action":"hostname","arguments":{"name":"studio"}}'}}]})
+        with patch("chromax.actions.run") as execute:
+            self.assertEqual(backend.propose("Rename this machine to studio", {}, cfg)["action"], "hostname")
+            execute.assert_not_called()
+        self.assertIn("schema", self.last_request["response_format"])
+
+    def test_model_cannot_expand_the_action_allowlist(self):
+        cfg = self.start_backend({"choices": [{"message": {"content": '{"action":"shell","arguments":{"command":"reboot"}}'}}]})
+        with self.assertRaises(ChromaxError):
+            backend.propose("do something", {}, cfg)
+
     def test_redirects_rejected_before_credentials_can_leak(self):
         cfg = self.start_backend({}, code=307, headers={"Location": "http://127.0.0.1:9"})
         with self.assertRaises(ChromaxError):
