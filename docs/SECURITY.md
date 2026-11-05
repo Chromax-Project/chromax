@@ -1,5 +1,20 @@
 # Security model
 
+Release checksum manifests use Ed25519 signatures. The public key is in
+`keys/release.pub`; its DER SHA-256 fingerprint is
+`2a58f67e52085190627772f5e97353c604767b04c106ba0b5adb66261dc6a2a3`.
+Verify a downloaded manifest with OpenSSL 3:
+
+```sh
+openssl pkeyutl -verify -pubin -inkey keys/release.pub -rawin \
+  -in chromax-0.1.0-aarch64-SHA256SUMS \
+  -sigfile chromax-0.1.0-aarch64-SHA256SUMS.sig
+sha256sum -c chromax-0.1.0-aarch64-SHA256SUMS
+```
+
+Establish trust in the public key through a trusted source checkout. A key fetched
+only alongside an untrusted download does not establish publisher identity.
+
 Report a vulnerability privately through GitHub's repository security reporting
 feature when it is enabled. Until then, do not include secrets or working exploit
 details in public issues. This is a new distribution with no independent security

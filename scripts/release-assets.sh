@@ -14,9 +14,14 @@ done
 for name in Image bzImage buildroot.config packages.json sbom.cdx.json chromax-source.tar.gz buildroot-2026.08.1.tar.xz legal-info.tar; do
     if [ -f "$SOURCE/$name" ]; then cp "$SOURCE/$name" "$DEST/$PREFIX-$name"; fi
 done
+if [ -f "$STORAGE/keys/release.pub" ]; then cp "$STORAGE/keys/release.pub" "$DEST/$PREFIX-release.pub"; fi
 (
     cd "$DEST"
     sha256sum "$SOURCE/chromax.img" "$SOURCE/rootfs.ext4" | sed "s|$SOURCE/||" > "$PREFIX-UNCOMPRESSED_SHA256SUMS"
     find . -maxdepth 1 -type f ! -name '*SHA256SUMS' ! -name '*.sig' -exec sha256sum '{}' \; | sort > "$PREFIX-SHA256SUMS"
     sha256sum "$PREFIX-UNCOMPRESSED_SHA256SUMS" >> "$PREFIX-SHA256SUMS"
+    if [ -f "$STORAGE/keys/release-private.pem" ]; then
+        openssl pkeyutl -sign -inkey "$STORAGE/keys/release-private.pem" -rawin \
+            -in "$PREFIX-SHA256SUMS" -out "$PREFIX-SHA256SUMS.sig"
+    fi
 )
