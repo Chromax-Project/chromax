@@ -13,6 +13,13 @@ installer replaces a whole target disk and must only be used on an explicitly
 selected empty/disposable device. It never chooses a disk automatically. Do not
 write a disk image onto the external drive containing your build storage.
 
+`./scripts/run-vm.sh aarch64 /path/to/artifacts/aarch64` starts a persistent QEMU
+overlay while preserving the release master. It uses native QEMU if installed,
+otherwise the Docker builder image. The console is interactive, and SSH is
+forwarded to host loopback port 2222. After provisioning a public key, copy a model
+with `scp -O -P 2222 model.gguf chromax@127.0.0.1:/home/chromax/`. The `-O` flag
+selects the SCP protocol supported by the compact SSH server.
+
 `chromaxctl status` works without a model. `chromaxctl doctor` distinguishes missing
 inference weights from base-system health. Use `sudo chromaxctl ssh-key '...full
 public key...'` to authorize the `chromax` SSH account. Root SSH and SSH passwords

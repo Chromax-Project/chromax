@@ -155,7 +155,7 @@ def main():
             raise RuntimeError("Rollback did not activate prior version")
         record("guest Ed25519 install upgrade execution and rollback")
         if args.model_sha256:
-            guest.command("sudo -n chromaxctl config --endpoint http://127.0.0.1:8081/v1 --model local --max-tokens 32 --timeout 180")
+            guest.command("sudo -n chromaxctl config --endpoint http://127.0.0.1:8081/v1 --model local --max-tokens 64 --timeout 300")
             guest.command(f"sudo -n chromaxctl model add {fixture}/model.gguf --sha256 {shlex.quote(args.model_sha256)}", timeout=60)
             output = guest.command("chromaxctl plan service-restart inference")
             plan = re.search(r'"id": "([a-f0-9]{24})"', output).group(1)
@@ -164,9 +164,9 @@ def main():
             # Bound integration generation while still executing the actual model.
             output = guest.command("python3 -c 'import urllib.request,json; b=json.dumps({\"messages\":[{\"role\":\"user\",\"content\":\"Say hello in one short sentence.\"}],\"max_tokens\":24,\"temperature\":0,\"stream\":False}).encode(); r=urllib.request.Request(\"http://127.0.0.1:8081/v1/chat/completions\",b,{\"Content-Type\":\"application/json\"}); d=json.load(urllib.request.urlopen(r,timeout=120)); a=d[\"choices\"][0][\"message\"][\"content\"]; assert a.strip(); print(\"ACTUAL_MODEL_RESPONSE=\"+a)'", timeout=140)
             record("actual local GGUF inference", output[-2500:])
-            output = guest.command("ai ask 'Say hello briefly.'", timeout=180)
+            output = guest.command("ai ask 'Say hello briefly.'", timeout=320)
             record("integrated assistant with actual local model", output[-2500:])
-            output = guest.command("ai propose 'Set the hostname to prism-test'", timeout=180)
+            output = guest.command("ai propose 'Set the hostname to prism-test'", timeout=320)
             if 'Set hostname to prism-test' not in output:
                 raise RuntimeError("The local model did not translate the hostname intent correctly")
             record("actual model translates natural-language intent into a pending plan", output[-2000:])

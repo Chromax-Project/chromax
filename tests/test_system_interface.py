@@ -146,6 +146,15 @@ class BackendTests(TemporaryTest):
         self.assertIn("untrusted;id", self.last_request["messages"][1]["content"])
         self.assertFalse(self.last_request["stream"])
 
+    def test_ai_context_preserves_facts_without_verbose_interface_metadata(self):
+        snapshot = {"hostname": "studio", "memory": {"MemTotal": 1048576 * 512},
+                    "network": [{"ifname": "eth0", "address": "unneeded-mac-metadata",
+                    "addr_info": [{"local": "10.0.2.15", "prefixlen": 24, "broadcast": "unneeded-broadcast"}]}]}
+        compact = backend.context(snapshot)
+        self.assertEqual(compact["memory_total_mib"], 512)
+        self.assertEqual(compact["addresses"]["eth0"], ["10.0.2.15/24"])
+        self.assertNotIn("unneeded", json.dumps(compact))
+
     def test_malformed_backend_response_rejected(self):
         cfg = self.start_backend({"choices": []})
         with self.assertRaises(ChromaxError):
