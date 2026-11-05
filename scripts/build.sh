@@ -18,4 +18,4 @@ fi
 docker run --rm --privileged --name "chromax-build-$ARCH" \
   --memory=7g --cpus=10 -v "$STORAGE:/storage" -v "$ROOT:/repo:ro" \
   -e "CHROMAX_ARCH=$ARCH" -e "CHROMAX_JOBS=${CHROMAX_JOBS:-6}" \
-  chromax-builder:2026.11 /repo/scripts/build-in-container.sh
+  chromax-builder:2026.11 bash -c 'cp /repo/scripts/build-in-container.sh /tmp/chromax-build.sh; exec bash /tmp/chromax-build.sh'

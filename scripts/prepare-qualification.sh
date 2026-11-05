@@ -5,6 +5,9 @@ ARCH=${1:?architecture required}
 case "$ARCH" in aarch64|x86_64) ;; *) exit 2;; esac
 IMAGES=/storage/artifacts/$ARCH
 WORK=/storage/qualification/$ARCH
+if [ -f "$WORK/evidence-direct/qualification.json" ]; then
+    mv "$WORK/evidence-direct" "$WORK/evidence-direct-$(date -u +%Y%m%dT%H%M%SZ)"
+fi
 mkdir -p "$WORK/fixtures" "$WORK/evidence-direct"
 cp --sparse=always "$IMAGES/rootfs.ext4" "$WORK/rootfs.ext4"
 if [ ! -f "$WORK/id_ed25519" ]; then ssh-keygen -q -t ed25519 -N '' -f "$WORK/id_ed25519"; fi
