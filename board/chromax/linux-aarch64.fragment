@@ -1,0 +1,3 @@
+# Firmware boot exposes time through EFI runtime services; direct DT boot
+# continues to use PL031. Without this driver UEFI guests start at the epoch.
+CONFIG_RTC_DRV_EFI=y

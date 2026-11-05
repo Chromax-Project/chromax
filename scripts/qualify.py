@@ -74,7 +74,7 @@ class Guest:
         self.log.close()
 
 
-def qemu_command(arch, images, rootfs, firmware=False, accelerator="tcg", firmware_path=None):
+def qemu_command(arch, images, rootfs, firmware=False, accelerator="tcg", firmware_path=None, disk_bus="virtio"):
     common = ["-m", "2048", "-smp", "2", "-nographic", "-no-reboot",
               "-netdev", "user,id=net0,hostfwd=tcp:127.0.0.1:22222-:22"]
     if arch == "aarch64":
@@ -90,11 +90,23 @@ def qemu_command(arch, images, rootfs, firmware=False, accelerator="tcg", firmwa
             command += ["-kernel", str(images / "Image"), "-append", "console=ttyAMA0 root=/dev/vda rw rootwait"]
     else:
         command = ["qemu-system-x86_64", "-machine", "q35", "-cpu", "max", *common,
-                   "-device", "virtio-net-pci,netdev=net0", "-drive", f"file={rootfs},if=virtio,format=raw"]
+                   "-device", "virtio-net-pci,netdev=net0"]
+        root_device = "/dev/vda"
+        if disk_bus == "nvme":
+            command += ["-drive", f"file={rootfs},if=none,id=root,format=raw", "-device", "nvme,drive=root,serial=CHROMAXTEST"]
+            root_device = "/dev/nvme0n1"
+        elif disk_bus == "sata":
+            command += ["-drive", f"file={rootfs},if=none,id=root,format=raw", "-device", "ide-hd,drive=root,bus=ide.0"]
+            root_device = "/dev/sda"
+        else:
+            command += ["-drive", f"file={rootfs},if=virtio,format=raw"]
+        if accelerator != "tcg":
+            command[command.index("max")] = "host"
+            command += ["-accel", accelerator]
         if firmware:
             command += ["-bios", str(firmware_path or "/usr/share/OVMF/OVMF_CODE_4M.fd")]
         else:
-            command += ["-kernel", str(images / "bzImage"), "-append", "console=ttyS0 root=/dev/vda rw rootwait"]
+            command += ["-kernel", str(images / "bzImage"), "-append", f"console=ttyS0 root={root_device} rw rootwait"]
     return command
 
 
@@ -109,11 +121,14 @@ def main():
     parser.add_argument("--uefi", action="store_true")
     parser.add_argument("--accelerator", choices=("tcg", "hvf", "kvm"), default="tcg")
     parser.add_argument("--firmware-path", type=Path)
+    parser.add_argument("--disk-bus", choices=("virtio", "nvme", "sata"), default="virtio")
     args = parser.parse_args()
+    if args.architecture == "aarch64" and args.disk_bus != "virtio":
+        parser.error("The ARM64 reference profile uses virtio storage")
     if args.rootfs.resolve() in ((args.images / "rootfs.ext4").resolve(), (args.images / "chromax.img").resolve()):
         parser.error("Qualification requires a disposable working copy, never a release master")
     args.evidence.mkdir(parents=True, exist_ok=True)
-    results = {"architecture": args.architecture, "accelerator": args.accelerator, "firmware": "UEFI" if args.uefi else "direct", "checks": [], "started": int(time.time())}
+    results = {"architecture": args.architecture, "accelerator": args.accelerator, "disk_bus": args.disk_bus, "firmware": "UEFI" if args.uefi else "direct", "checks": [], "started": int(time.time())}
     master = args.images / ("chromax.img" if args.uefi else "rootfs.ext4")
     digest = hashlib.sha256()
     with master.open("rb") as stream:
@@ -126,7 +141,7 @@ def main():
         results["checks"].append({"name": name, "passed": True, **({"output": output} if output is not None else {})})
         print("PASS " + name, flush=True)
     try:
-        command = qemu_command(args.architecture, args.images, args.rootfs, args.uefi, args.accelerator, args.firmware_path)
+        command = qemu_command(args.architecture, args.images, args.rootfs, args.uefi, args.accelerator, args.firmware_path, args.disk_bus)
         guest = Guest(command, args.evidence / "boot-1.log")
         guest.wait(rb"\r?\n\$ ", timeout=240)
         guest.command("test \"$(id -u)\" = 1000 && test \"$(uname -r)\" = 6.18.60", timeout=30)
