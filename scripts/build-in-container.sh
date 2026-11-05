@@ -1,7 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
-mount -o loop /storage/build.ext4 /work
-trap 'sync; umount /work' EXIT
+if [ "${CHROMAX_REUSE_WORKSPACE:-0}" = 1 ]; then
+    mountpoint -q /work || { echo 'Expected an already mounted build filesystem' >&2; exit 1; }
+else
+    mount -o loop /storage/build.ext4 /work
+    trap 'sync; umount /work' EXIT
+fi
 mkdir -p /work/source /work/output /work/repo /work/dl
 rsync -a --delete --exclude=.git --exclude=__pycache__ --exclude=.pytest_cache \
     --exclude=.env --exclude='*.pem' --exclude='*.gguf' --exclude=output \

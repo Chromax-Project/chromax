@@ -6,11 +6,15 @@ MODEL=/var/lib/chromax/models/current.gguf
 start() {
     if [ ! -f "$MODEL" ]; then echo "Chromax inference: no model provisioned (chromaxctl model add)."; return 0; fi
     printf 'Starting local inference: '
+    mkdir -p /var/log/chromax
+    if [ -f "$PID" ] && [ "$(readlink "/proc/$(cat "$PID")/exe" 2>/dev/null)" = "$DAEMON" ]; then
+        echo 'already running'
+        return 0
+    fi
     touch /var/log/chromax/inference.log
     chown chromax-ai:chromax-ai /var/log/chromax/inference.log
     chmod 0600 /var/log/chromax/inference.log
-    start-stop-daemon -S -b -m -p "$PID" -c chromax-ai:chromax-ai -x "$DAEMON" \
-        -a /usr/libexec/chromax-inference
+    start-stop-daemon -S -b -m -p "$PID" -c chromax-ai:chromax-ai -x /usr/libexec/chromax-inference
     echo done
 }
 stop() { stop_chromax_daemon "$PID" "$DAEMON"; }

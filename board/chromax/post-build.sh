@@ -1,7 +1,10 @@
 #!/bin/sh
 set -eu
 TARGET=$1
+if [ -L "$TARGET/var/log" ]; then rm "$TARGET/var/log"; fi
 install -d "$TARGET/var/lib/chromax/models" "$TARGET/var/log/chromax" "$TARGET/etc/chromax" "$TARGET/etc/default" "$TARGET/home/chromax"
+# A root password is never provisioned into distributable images.
+sed -i 's/^root:[^:]*:/root:*:/' "$TARGET/etc/shadow"
 cat > "$TARGET/etc/os-release" <<'EOF'
 NAME="Chromax Linux"
 ID=chromax

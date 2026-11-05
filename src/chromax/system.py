@@ -41,6 +41,12 @@ def doctor(state="/var/lib/chromax"):
               {"name": "console service token", "ok": Path("/run/chromax/token").exists(), "detail": "Recover a stopped console with sudo chromaxctl recover"},
               {"name": "inference binary", "ok": shutil.which("llama-server") is not None},
               {"name": "TLS trust store", "ok": Path("/etc/ssl/certs/ca-certificates.crt").exists()}]
+    if os.geteuid() == 0:
+        try:
+            root_password = next(line.split(":")[1] for line in Path("/etc/shadow").read_text().splitlines() if line.startswith("root:"))
+            checks.append({"name": "root password locked", "ok": root_password.startswith(("!", "*"))})
+        except (OSError, StopIteration):
+            checks.append({"name": "root password locked", "ok": False})
     try:
         cfg = load()
         checks.append({"name": "AI configuration", "ok": True, "endpoint": cfg["endpoint"]})

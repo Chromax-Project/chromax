@@ -170,6 +170,9 @@ def main():
         guest.wait(rb"\r?\n\$ ", timeout=240)
         guest.command("test \"$(hostname)\" = chromax-qualified && grep -q persistent-state /home/chromax/persistence-proof && chromaxctl package run hello")
         record("hostname user data and app selection persist across reboot")
+        if args.model_sha256:
+            guest.command("test -f /var/lib/chromax/models/current.gguf && for i in $(seq 1 120); do curl -fsS http://127.0.0.1:8081/health >/tmp/inference-health && break; sleep 1; done; grep -q ok /tmp/inference-health", timeout=150)
+            record("model persists and inference starts automatically after reboot")
         results["passed"] = True
     except Exception as error:
         results["passed"] = False
