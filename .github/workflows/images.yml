@@ -1,0 +1,29 @@
+name: Source image build
+on:
+  workflow_dispatch:
+    inputs:
+      architecture:
+        type: choice
+        options: [aarch64, x86_64]
+        default: aarch64
+        required: true
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 240
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Build from pinned upstream sources
+        env:
+          CHROMAX_STORAGE: ${{ runner.temp }}/chromax
+          CHROMAX_JOBS: 4
+          CHROMAX_ARCH: ${{ inputs.architecture }}
+        run: ./scripts/build.sh "$CHROMAX_ARCH"
+      - name: Upload images and corresponding sources
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: chromax-${{ inputs.architecture }}
+          path: ${{ runner.temp }}/chromax/artifacts/${{ inputs.architecture }}/
+          retention-days: 7

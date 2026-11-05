@@ -1,0 +1,20 @@
+#!/bin/sh
+DAEMON=/usr/bin/llama-server
+PID=/run/chromax-llama.pid
+MODEL=/var/lib/chromax/models/current.gguf
+start() {
+    if [ ! -f "$MODEL" ]; then echo "Chromax inference: no model provisioned (chromaxctl model add)."; return 0; fi
+    printf 'Starting local inference: '
+    start-stop-daemon -S -b -m -p "$PID" -c chromax-ai:chromax-ai -x "$DAEMON" -- \
+        --model "$MODEL" --host 127.0.0.1 --port 8081 --ctx-size 2048 --threads 4 \
+        --parallel 1 --no-webui </dev/null >>/var/log/chromax/inference.log 2>&1
+    echo done
+}
+stop() { start-stop-daemon -K -p "$PID" -x "$DAEMON" -R TERM/10/KILL/5 2>/dev/null || true; rm -f "$PID"; }
+case "${1:-}" in
+    start) start;;
+    stop) stop;;
+    restart) stop; start;;
+    status) if [ -f "$PID" ] && kill -0 "$(cat "$PID")" 2>/dev/null; then echo running; else echo stopped; exit 1; fi;;
+    *) echo "Usage: $0 {start|stop|restart|status}"; exit 1;;
+esac

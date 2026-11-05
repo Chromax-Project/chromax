@@ -1,0 +1,8 @@
+config BR2_PACKAGE_CHROMAX
+	bool "chromax"
+	select BR2_PACKAGE_PYTHON3
+	select BR2_PACKAGE_PYTHON3_SSL
+	select BR2_PACKAGE_PYTHON3_ZLIB
+	select BR2_PACKAGE_PYTHON3_READLINE
+	help
+	  Chromax system assistant, management tools and local web console.

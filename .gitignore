@@ -1,0 +1,13 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.env
+output/
+dist/
+.cache/
+*.gguf
+*.img
+*.qcow2
+*.ext4
+*.tar.*
+*.cpio*

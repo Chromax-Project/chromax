@@ -1,0 +1,20 @@
+#!/bin/sh
+PID=/run/chromax.pid
+DAEMON=/usr/bin/chromaxctl
+start() {
+    mkdir -p /run/chromax /var/log/chromax /var/lib/chromax/plans
+    chmod 0755 /run/chromax /var/log/chromax /var/lib/chromax
+    chmod 0700 /var/lib/chromax/plans
+    printf 'Starting Chromax console: '
+    start-stop-daemon -S -b -m -p "$PID" -x /usr/bin/python3 -- -I "$DAEMON" serve \
+        </dev/null >>/var/log/chromax/console.log 2>&1
+    echo done
+}
+stop() { start-stop-daemon -K -p "$PID" -R TERM/5/KILL/2 2>/dev/null || true; rm -f "$PID" /run/chromax/token; }
+case "${1:-}" in
+    start) start;;
+    stop) stop;;
+    restart) stop; start;;
+    status) if [ -f "$PID" ] && kill -0 "$(cat "$PID")" 2>/dev/null; then echo running; else echo stopped; exit 1; fi;;
+    *) echo "Usage: $0 {start|stop|restart|status}"; exit 1;;
+esac

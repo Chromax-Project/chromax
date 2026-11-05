@@ -1,0 +1,2 @@
+chromax 1000 chromax 1000 ! /home/chromax /bin/sh wheel Chromax user
+chromax-ai 998 chromax-ai 998 ! /var/lib/chromax /bin/false - Chromax inference service
