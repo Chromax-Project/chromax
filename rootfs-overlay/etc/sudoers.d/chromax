@@ -1,0 +1,4 @@
+# The default local account is the machine administrator. AI/HTTP never invokes
+# this entry point, and the optional admin shell requires an interactive TTY.
+chromax ALL=(root) NOPASSWD: /usr/bin/chromaxctl
+chromax ALL=(root) NOPASSWD: /usr/bin/chromax-install

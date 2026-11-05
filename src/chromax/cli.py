@@ -42,7 +42,7 @@ def parser():
     p = argparse.ArgumentParser(prog="chromaxctl", description="Chromax Linux — your machine, understood")
     p.add_argument("--version", action="version", version=__version__)
     commands = p.add_subparsers(dest="command", required=True)
-    for name in ("status", "doctor", "web-token", "chat", "serve", "help", "passwd", "recover", "poweroff", "reboot"):
+    for name in ("status", "doctor", "web-token", "chat", "serve", "help", "passwd", "recover", "poweroff", "reboot", "admin"):
         commands.add_parser(name)
     ask = commands.add_parser("ask")
     ask.add_argument("question", nargs="+")
@@ -194,6 +194,11 @@ def main(argv=None):
             require_root()
             from .common import run
             run(["/sbin/" + args.command])
+        elif args.command == "admin":
+            require_root()
+            if not sys.stdin.isatty() or not sys.stdout.isatty():
+                raise ChromaxError("The administrator shell requires an interactive terminal")
+            os.execve("/bin/sh", ["-sh"], {"PATH": "/usr/sbin:/usr/bin:/sbin:/bin", "HOME": "/root", "USER": "root", "LOGNAME": "root", "TERM": "vt100"})
         elif args.command == "package":
             op = args.package_command
             if op == "list":

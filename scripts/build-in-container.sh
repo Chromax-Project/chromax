@@ -3,7 +3,9 @@ set -euo pipefail
 mount -o loop /storage/build.ext4 /work
 trap 'sync; umount /work' EXIT
 mkdir -p /work/source /work/output /work/repo /work/dl
-rsync -a --delete --exclude=.git /repo/ /work/repo/
+rsync -a --delete --exclude=.git --exclude=__pycache__ --exclude=.pytest_cache \
+    --exclude=.env --exclude='*.pem' --exclude='*.gguf' --exclude=output \
+    --exclude=dist --exclude=.cache /repo/ /work/repo/
 VERSION=2026.08.1
 ARCHIVE=/storage/sources/buildroot-$VERSION.tar.xz
 if [ ! -f "$ARCHIVE" ]; then curl -fL --retry 3 "https://buildroot.org/downloads/buildroot-$VERSION.tar.xz" -o "$ARCHIVE"; fi
@@ -17,10 +19,20 @@ if [ -f "$KERNEL_ARCHIVE" ]; then
 fi
 chown -R builder:builder /work
 sudo -u builder make -C "$BR" O="$OUT" BR2_EXTERNAL=/work/repo BR2_DL_DIR=/work/dl "chromax_${CHROMAX_ARCH}_defconfig"
+# Local source packages are stamp-based; never retain an old management tool
+# merely because the upstream toolchain is already built.
+sudo -u builder make -C "$BR" O="$OUT" BR2_EXTERNAL=/work/repo BR2_DL_DIR=/work/dl chromax-dirclean
+BUSYBOX_HASH=$(sha256sum /work/repo/board/chromax/busybox.fragment | cut -d' ' -f1)
+if [ "$(cat "$OUT/.chromax-busybox-hash" 2>/dev/null || true)" != "$BUSYBOX_HASH" ]; then
+    sudo -u builder make -C "$BR" O="$OUT" BR2_EXTERNAL=/work/repo BR2_DL_DIR=/work/dl busybox-dirclean
+    echo "$BUSYBOX_HASH" > "$OUT/.chromax-busybox-hash"
+fi
 sudo -u builder make -C "$BR" O="$OUT" BR2_EXTERNAL=/work/repo BR2_DL_DIR=/work/dl -j"$CHROMAX_JOBS"
 echo "3c2f44ef6acc021a7ad444d9a2e6ec1ef488ff09368793d0004a6080f69d621e  $KERNEL_ARCHIVE" | sha256sum -c -
 mkdir -p "/storage/artifacts/$CHROMAX_ARCH"
 cp -a "$OUT/images/." "/storage/artifacts/$CHROMAX_ARCH/"
+tar -C /work/repo -czf "/storage/artifacts/$CHROMAX_ARCH/chromax-source.tar.gz" .
+cp "$ARCHIVE" "/storage/artifacts/$CHROMAX_ARCH/buildroot-$VERSION.tar.xz"
 cp "$OUT/.config" "/storage/artifacts/$CHROMAX_ARCH/buildroot.config"
 sudo -u builder make -s -C "$BR" O="$OUT" BR2_EXTERNAL=/work/repo BR2_DL_DIR=/work/dl show-info > "/storage/artifacts/$CHROMAX_ARCH/packages.json"
 BR2_DL_DIR=/work/dl python3 "$BR/utils/generate-cyclonedx" < "/storage/artifacts/$CHROMAX_ARCH/packages.json" > "/storage/artifacts/$CHROMAX_ARCH/sbom.cdx.json"

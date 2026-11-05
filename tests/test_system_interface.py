@@ -15,7 +15,7 @@ from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
 from chromax import actions, backend, config, models, packages
-from chromax.cli import safe_text
+from chromax.cli import safe_text, main
 from chromax.common import ChromaxError
 from chromax.server import Server
 
@@ -58,6 +58,11 @@ class ConfigurationTests(TemporaryTest):
 
     def test_terminal_escape_sequences_cannot_reach_console(self):
         self.assertNotIn("\x1b", safe_text("hello\x1b]52;c;secret\x07\n"))
+
+    def test_admin_shell_rejects_noninteractive_use(self):
+        with patch("sys.stdin.isatty", return_value=False), patch("chromax.cli.os.execve") as execute:
+            self.assertEqual(main(["admin"]), 1)
+            execute.assert_not_called()
 
 
 class PlanTests(TemporaryTest):

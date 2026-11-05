@@ -142,3 +142,8 @@ latest versions during a reproducible build.
 
 If the console daemon is stopped, run `sudo chromaxctl recover` from the local
 console. This narrowly restarts the broker without requiring its HTTP API.
+
+For full manual administration, use `sudo chromaxctl admin` in an interactive
+terminal. It opens a root shell; `exit` returns to the user account. This is an
+explicit administrator workflow and is never exposed through the assistant API.
+Use `sudo chromaxctl poweroff` or `sudo chromaxctl reboot` for power management.

@@ -16,7 +16,7 @@ the default listener is loopback and remote use should be tunneled.
 
 The local `chromax` account may invoke `chromaxctl` through sudo. This authorizes
 the reviewed management interface, including trust-key and endpoint provisioning.
-It does not authorize arbitrary app execution as root. The wrapper uses Python
+An explicit `sudo chromaxctl admin` opens an interactive root shell for full system administration; it accepts no command argument and is unavailable without a TTY. The HTTP API and assistant cannot invoke it. Package-run refuses to launch apps as root. The wrapper uses Python
 isolated mode and an absolute module path. Package run rejects root invocations.
 The console is an administrator's console: possession of local console or SSH
 access as this user is a privileged trust decision. This is not a multi-tenant

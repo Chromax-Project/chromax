@@ -14,14 +14,9 @@ EOF
 # Local console starts an unprivileged session. Password and SSH keys are
 # provisioned explicitly; both accounts remain password-locked in images.
 if grep -q '^BR2_aarch64=y' "$BR2_CONFIG"; then CONSOLE=ttyAMA0; else CONSOLE=ttyS0; fi
-sed -i "s@^[^#].*getty.*$CONSOLE.*@$CONSOLE::respawn:/sbin/agetty -a chromax -L $CONSOLE 115200 vt100@" "$TARGET/etc/inittab"
-cat >> "$TARGET/etc/sudoers" <<'EOF'
-
-# The root entry point validates every argument. No arbitrary shell execution.
-chromax ALL=(root) NOPASSWD: /usr/bin/chromaxctl
-chromax ALL=(root) NOPASSWD: /usr/bin/chromax-install
-EOF
+sed -i "s@^[^#].*getty.*$CONSOLE.*@$CONSOLE::respawn:/sbin/agetty -n -l /usr/bin/chromax-console -L $CONSOLE 115200 vt100@" "$TARGET/etc/inittab"
 chmod 0440 "$TARGET/etc/sudoers"
+chmod 0440 "$TARGET/etc/sudoers.d/chromax"
 cat > "$TARGET/etc/profile.d/chromax.sh" <<'EOF'
 export PYTHONPATH=/usr/lib/chromax
 if [ -t 1 ]; then

@@ -1,0 +1,21 @@
+#!/usr/bin/python3 -I
+"""Physical/VM console autologin, with an explicit privilege drop.
+
+Passwords remain locked for network authentication. Only getty invokes this
+fixed-account entry point; it never accepts a username or command argument.
+"""
+import os
+import pwd
+
+account = pwd.getpwnam("chromax")
+if os.geteuid() == 0:
+    os.initgroups(account.pw_name, account.pw_gid)
+    os.setgid(account.pw_gid)
+    os.setuid(account.pw_uid)
+elif os.geteuid() != account.pw_uid:
+    raise SystemExit("Console must run as root or chromax")
+os.chdir(account.pw_dir)
+environment = {"HOME": account.pw_dir, "USER": account.pw_name, "LOGNAME": account.pw_name,
+               "SHELL": "/bin/sh", "PATH": "/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin",
+               "TERM": "vt100", "LANG": "C.UTF-8"}
+os.execve("/bin/sh", ["-sh"], environment)

@@ -10,6 +10,7 @@ define CHROMAX_INSTALL_TARGET_CMDS
 	cp -a $(@D)/chromax $(TARGET_DIR)/usr/lib/chromax/
 	$(INSTALL) -m 0755 $(@D)/chromaxctl $(TARGET_DIR)/usr/bin/chromaxctl
 	$(INSTALL) -m 0755 $(@D)/chromax-install $(TARGET_DIR)/usr/bin/chromax-install
+	$(INSTALL) -m 0755 $(@D)/chromax-console $(TARGET_DIR)/usr/bin/chromax-console
 	ln -sf chromaxctl $(TARGET_DIR)/usr/bin/ai
 endef
 
