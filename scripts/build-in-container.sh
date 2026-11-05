@@ -11,12 +11,19 @@ echo "34fb7bea8a213ffde39cc02e61703391560f26e0850f03138c722d0b09880f2b  $ARCHIVE
 if [ ! -d "/work/source/buildroot-$VERSION" ]; then tar -xJf "$ARCHIVE" -C /work/source; fi
 BR=/work/source/buildroot-$VERSION
 OUT=/work/output/$CHROMAX_ARCH
+KERNEL_ARCHIVE=/work/dl/linux/linux-6.18.60.tar.xz
+if [ -f "$KERNEL_ARCHIVE" ]; then
+    echo "3c2f44ef6acc021a7ad444d9a2e6ec1ef488ff09368793d0004a6080f69d621e  $KERNEL_ARCHIVE" | sha256sum -c -
+fi
 chown -R builder:builder /work
 sudo -u builder make -C "$BR" O="$OUT" BR2_EXTERNAL=/work/repo BR2_DL_DIR=/work/dl "chromax_${CHROMAX_ARCH}_defconfig"
 sudo -u builder make -C "$BR" O="$OUT" BR2_EXTERNAL=/work/repo BR2_DL_DIR=/work/dl -j"$CHROMAX_JOBS"
+echo "3c2f44ef6acc021a7ad444d9a2e6ec1ef488ff09368793d0004a6080f69d621e  $KERNEL_ARCHIVE" | sha256sum -c -
 mkdir -p "/storage/artifacts/$CHROMAX_ARCH"
 cp -a "$OUT/images/." "/storage/artifacts/$CHROMAX_ARCH/"
 cp "$OUT/.config" "/storage/artifacts/$CHROMAX_ARCH/buildroot.config"
+sudo -u builder make -s -C "$BR" O="$OUT" BR2_EXTERNAL=/work/repo BR2_DL_DIR=/work/dl show-info > "/storage/artifacts/$CHROMAX_ARCH/packages.json"
+BR2_DL_DIR=/work/dl python3 "$BR/utils/generate-cyclonedx" < "/storage/artifacts/$CHROMAX_ARCH/packages.json" > "/storage/artifacts/$CHROMAX_ARCH/sbom.cdx.json"
 sudo -u builder make -C "$BR" O="$OUT" BR2_EXTERNAL=/work/repo BR2_DL_DIR=/work/dl legal-info
 tar -C "$OUT" -cf "/storage/artifacts/$CHROMAX_ARCH/legal-info.tar" legal-info
 find "/storage/artifacts/$CHROMAX_ARCH" -maxdepth 1 -type f ! -name SHA256SUMS -exec sha256sum '{}' \; > "/storage/artifacts/$CHROMAX_ARCH/SHA256SUMS"

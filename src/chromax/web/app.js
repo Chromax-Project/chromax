@@ -28,6 +28,7 @@ async function refresh() {
     $('storage-detail').textContent = gib(s.disk.free) + ' available';
     $('storage-bar').style.width = (s.disk.used / s.disk.total * 100) + '%';
     $('cpu').textContent = s.load[0].toFixed(2);
+    $('cpu-bar').style.width = Math.min(100, s.load[0] / s.cpus * 100) + '%';
     $('cpu-detail').textContent = s.cpus + ' cores · ' + s.architecture;
     const hours = Math.floor((s.uptime_seconds || 0) / 3600);
     $('uptime').textContent = hours ? hours + 'h ' + Math.floor(s.uptime_seconds % 3600 / 60) + 'm' : Math.floor((s.uptime_seconds || 0) / 60) + ' minutes';

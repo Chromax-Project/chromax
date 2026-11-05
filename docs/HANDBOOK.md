@@ -80,7 +80,7 @@ sudo chromaxctl apply PLAN_ID --confirm PLAN_ID
 ```
 
 Plans expire after 15 minutes and cannot be applied twice. Restart operations are
-limited to `network`, `ssh` and `inference`. The assistant does not automatically
+limited to `network`, `ssh`, `inference` and `console`. The assistant does not automatically
 execute a model-generated instruction.
 
 ## Application bundles
@@ -139,3 +139,6 @@ generated configuration and legal/source material. Adding a service or privilege
 action requires an explicit implementation and boundary tests. Updating the kernel
 also requires updating its custom archive checksum. Do not silently resolve
 latest versions during a reproducible build.
+
+If the console daemon is stopped, run `sudo chromaxctl recover` from the local
+console. This narrowly restarts the broker without requiring its HTTP API.

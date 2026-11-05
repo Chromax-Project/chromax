@@ -19,6 +19,7 @@ cat >> "$TARGET/etc/sudoers" <<'EOF'
 
 # The root entry point validates every argument. No arbitrary shell execution.
 chromax ALL=(root) NOPASSWD: /usr/bin/chromaxctl
+chromax ALL=(root) NOPASSWD: /usr/bin/chromax-install
 EOF
 chmod 0440 "$TARGET/etc/sudoers"
 cat > "$TARGET/etc/profile.d/chromax.sh" <<'EOF'

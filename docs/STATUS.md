@@ -9,7 +9,7 @@ executed evidence.
 | Public source repository | Created | https://github.com/Chromax-Project/chromax |
 | Source archive integrity | Buildroot verified | SHA-256 matched signed release statement; maintainer PGP signature checked |
 | Target source compilation | Running: ARM64 | External-drive build log; no completed image yet |
-| Host security and unit tests | Running | `scripts/test.sh` |
+| Host security and unit tests | 22 passed locally and on GitHub | `scripts/test.sh`; [GitHub run](https://github.com/Chromax-Project/chromax/actions/runs/42116081309) |
 | Guest boot, networking and persistence | Pending | Requires source-built image |
 | Guest local-model inference | Pending | Checksummed GGUF fixture downloaded |
 | Signed app install/upgrade/rollback | Host test implemented | Guest qualification pending |

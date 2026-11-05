@@ -38,6 +38,7 @@ def status():
 def doctor(state="/var/lib/chromax"):
     from .config import load
     checks = [{"name": "state directory", "ok": Path(state).is_dir()},
+              {"name": "console service token", "ok": Path("/run/chromax/token").exists(), "detail": "Recover a stopped console with sudo chromaxctl recover"},
               {"name": "inference binary", "ok": shutil.which("llama-server") is not None},
               {"name": "TLS trust store", "ok": Path("/etc/ssl/certs/ca-certificates.crt").exists()}]
     try:

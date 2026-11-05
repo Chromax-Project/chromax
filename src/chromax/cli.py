@@ -42,7 +42,7 @@ def parser():
     p = argparse.ArgumentParser(prog="chromaxctl", description="Chromax Linux — your machine, understood")
     p.add_argument("--version", action="version", version=__version__)
     commands = p.add_subparsers(dest="command", required=True)
-    for name in ("status", "doctor", "web-token", "chat", "serve", "help", "passwd"):
+    for name in ("status", "doctor", "web-token", "chat", "serve", "help", "passwd", "recover", "poweroff", "reboot"):
         commands.add_parser(name)
     ask = commands.add_parser("ask")
     ask.add_argument("question", nargs="+")
@@ -65,6 +65,8 @@ def parser():
     cfg = commands.add_parser("config")
     cfg.add_argument("--endpoint", required=True)
     cfg.add_argument("--model", default="local")
+    cfg.add_argument("--max-tokens", type=int, default=768)
+    cfg.add_argument("--timeout", type=int, default=120)
     cfg.add_argument("--allow-remote", action="store_true")
     cfg.add_argument("--api-key", action="store_true", help="Read an API key privately from the terminal")
     cfg.add_argument("--listen", choices=("127.0.0.1", "0.0.0.0"), default="127.0.0.1")
@@ -143,9 +145,10 @@ def main(argv=None):
                     raise ChromaxError("Invalid API key")
                 atomic_write(key_path, key + "\n")
             config.save("/etc/chromax/ai.json", {"endpoint": args.endpoint, "model": args.model,
-                        "allow_remote": args.allow_remote, "api_key_file": key_path})
+                        "allow_remote": args.allow_remote, "api_key_file": key_path,
+                        "max_tokens": args.max_tokens, "timeout": args.timeout})
             atomic_write("/etc/chromax/listen", args.listen + "\n", 0o644)
-            result = {"configured": True, "restart_required": "sudo chromaxctl plan service-restart inference (when model changes); restart S80chromax when listener changes"}
+            result = {"configured": True, "restart_required": "Create and apply a console restart plan if the listener changes; restart inference after changing the local model."}
         elif args.command == "ssh-key":
             require_root()
             import base64
@@ -183,6 +186,14 @@ def main(argv=None):
         elif args.command == "serve":
             from .server import serve
             serve()
+        elif args.command == "recover":
+            require_root()
+            from .common import run
+            result = {"console": run(["/etc/init.d/S80chromax", "restart"], timeout=30)}
+        elif args.command in ("poweroff", "reboot"):
+            require_root()
+            from .common import run
+            run(["/sbin/" + args.command])
         elif args.command == "package":
             op = args.package_command
             if op == "list":

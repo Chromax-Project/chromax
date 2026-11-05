@@ -8,7 +8,7 @@ import secrets
 import time
 from .common import ChromaxError, atomic_write, write_json, read_json, locked, run, audit, require_root
 
-SERVICES = {"network": "/etc/init.d/S40network", "ssh": "/etc/init.d/S50dropbear", "inference": "/etc/init.d/S70llama"}
+SERVICES = {"network": "/etc/init.d/S40network", "ssh": "/etc/init.d/S50dropbear", "inference": "/etc/init.d/S70llama", "console": "/etc/init.d/S80chromax"}
 ID = re.compile(r"^[0-9a-f]{24}$")
 
 

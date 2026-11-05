@@ -5,6 +5,11 @@ ARCH=${1:-aarch64}
 case "$ARCH" in aarch64|x86_64) ;; *) echo 'Architecture must be aarch64 or x86_64' >&2; exit 2;; esac
 STORAGE=${CHROMAX_STORAGE:-/Volumes/Models/Chromax}
 mkdir -p "$STORAGE/sources" "$STORAGE/artifacts" "$STORAGE/logs"
+if ! mkdir "$STORAGE/.build-lock" 2>/dev/null; then
+  echo "The build filesystem is locked. Run one build at a time. If a build crashed, verify no chromax-build container is running before removing $STORAGE/.build-lock." >&2
+  exit 1
+fi
+trap 'rmdir "$STORAGE/.build-lock"' EXIT
 docker build -t chromax-builder:2026.11 -f "$ROOT/scripts/Dockerfile" "$ROOT"
 if [ ! -f "$STORAGE/build.ext4" ]; then
   docker run --rm -v "$STORAGE:/storage" chromax-builder:2026.11 \

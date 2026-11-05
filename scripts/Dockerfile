@@ -5,6 +5,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     bzip2 xz-utils patch python3 python3-venv libncurses-dev flex bison \
     libssl-dev gawk texinfo help2man autoconf automake libtool pkg-config \
     qemu-system-arm qemu-system-x86 qemu-utils qemu-efi-aarch64 ovmf e2fsprogs dosfstools \
-    parted gdisk mtools sudo gnupg zstd && rm -rf /var/lib/apt/lists/*
+    parted gdisk mtools sudo gnupg zstd openssh-client && rm -rf /var/lib/apt/lists/*
 RUN useradd -m -u 1001 builder
 WORKDIR /work
