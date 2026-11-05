@@ -1,0 +1,58 @@
+name: Qualify x86 release with KVM
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Release or draft tag containing signed x86 image assets
+        required: true
+        default: v0.1.0-alpha.1
+permissions:
+  contents: read
+jobs:
+  qualify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Install test tools and require hardware virtualization
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq qemu-system-x86 zstd openssl python3 util-linux openssh-client
+          test -c /dev/kvm
+      - name: Fetch and verify candidate image
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/chromax/artifacts/x86_64" "$RUNNER_TEMP/chromax/models"
+          cd "$RUNNER_TEMP/chromax/artifacts/x86_64"
+          for suffix in rootfs.ext4.zst bzImage SHA256SUMS SHA256SUMS.sig UNCOMPRESSED_SHA256SUMS; do
+            gh release download "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --pattern "chromax-0.1.0-x86_64-$suffix"
+          done
+          openssl pkeyutl -verify -pubin -inkey "$GITHUB_WORKSPACE/keys/release.pub" -rawin -in chromax-0.1.0-x86_64-SHA256SUMS -sigfile chromax-0.1.0-x86_64-SHA256SUMS.sig
+          sha256sum --ignore-missing -c chromax-0.1.0-x86_64-SHA256SUMS
+          zstd -d chromax-0.1.0-x86_64-rootfs.ext4.zst -o rootfs.ext4
+          cp chromax-0.1.0-x86_64-bzImage bzImage
+          sha256sum --ignore-missing -c chromax-0.1.0-x86_64-UNCOMPRESSED_SHA256SUMS
+      - name: Fetch the checksummed public model fixture
+        run: |
+          curl -fL --retry 3 'https://huggingface.co/Qwen/Qwen3-0.6B-GGUF/resolve/23749fefcc72300e3a2ad315e1317431b06b590a/Qwen3-0.6B-Q8_0.gguf' -o "$RUNNER_TEMP/chromax/models/model.gguf"
+          echo "9465e63a22add5354d9bb4b99e90117043c7124007664907259bd16d043bb031  $RUNNER_TEMP/chromax/models/model.gguf" | sha256sum -c -
+      - name: Prepare a disposable writable guest
+        run: |
+          sudo ln -s "$GITHUB_WORKSPACE" /repo
+          sudo ln -s "$RUNNER_TEMP/chromax" /storage
+          sudo env CHROMAX_TEST_MODEL=/storage/models/model.gguf CHROMAX_PREPARE_ONLY=1 PYTHONPATH=/repo/src bash /repo/scripts/prepare-qualification.sh x86_64
+      - name: Exercise actual guest inference and administration
+        run: |
+          sudo python3 scripts/qualify.py --architecture x86_64 --accelerator kvm --images /storage/artifacts/x86_64 --rootfs /storage/qualification/x86_64/rootfs.ext4 --evidence /storage/qualification/x86_64/evidence-kvm --ssh-key /storage/qualification/x86_64/id_ed25519 --model-sha256 9465e63a22add5354d9bb4b99e90117043c7124007664907259bd16d043bb031
+      - name: Retain qualification evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: x86-kvm-qualification
+          path: |
+            ${{ runner.temp }}/chromax/qualification/x86_64/evidence-kvm/qualification.json
+            ${{ runner.temp }}/chromax/qualification/x86_64/evidence-kvm/boot-*.log
+          if-no-files-found: ignore
+          retention-days: 30
