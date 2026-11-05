@@ -114,6 +114,13 @@ def main():
         parser.error("Qualification requires a disposable working copy, never a release master")
     args.evidence.mkdir(parents=True, exist_ok=True)
     results = {"architecture": args.architecture, "accelerator": args.accelerator, "firmware": "UEFI" if args.uefi else "direct", "checks": [], "started": int(time.time())}
+    master = args.images / ("chromax.img" if args.uefi else "rootfs.ext4")
+    digest = hashlib.sha256()
+    with master.open("rb") as stream:
+        while chunk := stream.read(8 * 1024 * 1024):
+            digest.update(chunk)
+    results["source_image_sha256"] = digest.hexdigest()
+    results["model_sha256"] = args.model_sha256
     guest = None
     def record(name, output=None):
         results["checks"].append({"name": name, "passed": True, **({"output": output} if output is not None else {})})

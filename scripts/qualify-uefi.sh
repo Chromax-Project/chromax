@@ -2,7 +2,7 @@
 set -euo pipefail
 ARCH=${1:?architecture required}
 case "$ARCH" in aarch64|x86_64) ;; *) exit 2;; esac
-IMAGES=/storage/artifacts/$ARCH
+IMAGES=${CHROMAX_IMAGES:-/storage/artifacts/$ARCH}
 BASE=/storage/qualification/$ARCH
 WORK=$BASE/uefi
 mkdir -p "$WORK/evidence" /mnt/qualification

@@ -1,0 +1,3 @@
+# Root filesystems on current PC storage must be reachable before userspace.
+CONFIG_BLK_DEV_NVME=y
+CONFIG_SATA_AHCI=y

@@ -18,6 +18,10 @@ EOF
 # provisioned explicitly; both accounts remain password-locked in images.
 if grep -q '^BR2_aarch64=y' "$BR2_CONFIG"; then CONSOLE=ttyAMA0; else CONSOLE=ttyS0; fi
 sed -i "s@^[^#].*getty.*$CONSOLE.*@$CONSOLE::respawn:/sbin/agetty -n -l /usr/bin/chromax-console -L $CONSOLE 115200 vt100@" "$TARGET/etc/inittab"
+if [ "$CONSOLE" = ttyS0 ]; then
+    sed -i '/^tty1::respawn:/d' "$TARGET/etc/inittab"
+    echo 'tty1::respawn:/sbin/agetty -n -l /usr/bin/chromax-console tty1 38400 linux' >> "$TARGET/etc/inittab"
+fi
 chmod 0440 "$TARGET/etc/sudoers"
 # Remove rules appended by early development images; the drop-in is canonical.
 sed -i '/^chromax ALL=(root) NOPASSWD: \/usr\/bin\/chromaxctl$/d; /^chromax ALL=(root) NOPASSWD: \/usr\/bin\/chromax-install$/d' "$TARGET/etc/sudoers"

@@ -27,6 +27,10 @@ remain disabled. `sudo chromaxctl passwd` sets the user's console password for
 future password-authenticated workflows; the development serial console still
 uses auto-login.
 
+The x86-64 image also starts a local display/keyboard session on `tty1`; its serial
+session remains available for headless use. The ARM64 reference targets QEMU's
+`virt` platform, not arbitrary ARM boards.
+
 ## Local AI
 
 Copy a trusted GGUF model into the guest or attach a separate model volume. Verify

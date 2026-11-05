@@ -15,9 +15,9 @@ sha256sum -c chromax-0.1.0-aarch64-SHA256SUMS
 Establish trust in the public key through a trusted source checkout. A key fetched
 only alongside an untrusted download does not establish publisher identity.
 
-Report a vulnerability privately through GitHub's repository security reporting
-feature when it is enabled. Until then, do not include secrets or working exploit
-details in public issues. This is a new distribution with no independent security
+Report vulnerabilities privately through the repository's enabled
+[security reporting](https://github.com/Chromax-Project/chromax/security).
+This is a new distribution with no independent security
 audit or established support window.
 
 ## Trust boundaries
