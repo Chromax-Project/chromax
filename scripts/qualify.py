@@ -105,6 +105,8 @@ def main():
     parser.add_argument("--ssh-key", type=Path)
     parser.add_argument("--uefi", action="store_true")
     args = parser.parse_args()
+    if args.rootfs.resolve() in ((args.images / "rootfs.ext4").resolve(), (args.images / "chromax.img").resolve()):
+        parser.error("Qualification requires a disposable working copy, never a release master")
     args.evidence.mkdir(parents=True, exist_ok=True)
     results = {"architecture": args.architecture, "firmware": "UEFI" if args.uefi else "direct", "checks": [], "started": int(time.time())}
     guest = None
@@ -114,7 +116,7 @@ def main():
     try:
         command = qemu_command(args.architecture, args.images, args.rootfs, args.uefi)
         guest = Guest(command, args.evidence / "boot-1.log")
-        guest.wait(rb"chromax.*\$ ", timeout=240)
+        guest.wait(rb"\r?\n\$ ", timeout=240)
         guest.command("test \"$(id -u)\" = 1000 && test \"$(uname -r)\" = 6.18.60", timeout=30)
         record("boot and unprivileged session")
         output = guest.command("chromaxctl status && chromaxctl doctor")
@@ -165,7 +167,7 @@ def main():
         guest.command("printf 'persistent-state\\n' > /home/chromax/persistence-proof && sync")
         guest.shutdown()
         guest = Guest(command, args.evidence / "boot-2.log")
-        guest.wait(rb"chromax.*\$ ", timeout=240)
+        guest.wait(rb"\r?\n\$ ", timeout=240)
         guest.command("test \"$(hostname)\" = chromax-qualified && grep -q persistent-state /home/chromax/persistence-proof && chromaxctl package run hello")
         record("hostname user data and app selection persist across reboot")
         results["passed"] = True

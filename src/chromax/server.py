@@ -150,6 +150,9 @@ class Handler(BaseHTTPRequestHandler):
 
 def serve():
     require_root()
+    log = open("/var/log/chromax/console.log", "a", buffering=1)
+    os.dup2(log.fileno(), 1)
+    os.dup2(log.fileno(), 2)
     token = secrets.token_urlsafe(32)
     path = Path("/run/chromax/token")
     atomic_write(path, token + "\n", 0o640)

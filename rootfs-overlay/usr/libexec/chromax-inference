@@ -1,0 +1,6 @@
+#!/bin/sh
+# Open the log after start-stop-daemon's background fork closes its descriptors.
+exec /usr/bin/llama-server \
+    --model /var/lib/chromax/models/current.gguf --host 127.0.0.1 --port 8081 \
+    --ctx-size 2048 --threads 4 --parallel 1 --no-webui \
+    >>/var/log/chromax/inference.log 2>&1

@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 TARGET=$1
-install -d "$TARGET/var/lib/chromax/models" "$TARGET/var/log/chromax" "$TARGET/etc/chromax" "$TARGET/home/chromax"
+install -d "$TARGET/var/lib/chromax/models" "$TARGET/var/log/chromax" "$TARGET/etc/chromax" "$TARGET/etc/default" "$TARGET/home/chromax"
 cat > "$TARGET/etc/os-release" <<'EOF'
 NAME="Chromax Linux"
 ID=chromax
