@@ -33,6 +33,7 @@ chown -R 1000:1000 /mnt/qualification/home/chromax/qualification
 sync
 umount /mnt/qualification
 trap - EXIT
+if [ "${CHROMAX_PREPARE_ONLY:-0}" = 1 ]; then echo 'Prepared a disposable qualification root filesystem.'; exit 0; fi
 MODEL_ARGS=()
 if [ -n "${CHROMAX_TEST_MODEL:-}" ]; then MODEL_ARGS=(--model-sha256 "$(sha256sum "$CHROMAX_TEST_MODEL" | cut -d' ' -f1)"); fi
 PYTHONPATH=/repo/src python3 /repo/scripts/qualify.py --architecture "$ARCH" --images "$IMAGES" \

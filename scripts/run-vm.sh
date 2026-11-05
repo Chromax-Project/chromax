@@ -20,7 +20,10 @@ if [ ! -f "$STATE/root.qcow2" ]; then
     qemu-img create -f qcow2 -F raw -b "$IMAGES/rootfs.ext4" "$STATE/root.qcow2"
 fi
 if [ "$ARCH" = aarch64 ]; then
-    exec qemu-system-aarch64 -machine virt -cpu cortex-a72 -m 2048 -smp 2 -nographic \
+    CPU=cortex-a72
+    ACCEL=()
+    if [ "$(uname -s)" = Darwin ] && [ "$(uname -m)" = arm64 ]; then CPU=host; ACCEL=(-accel hvf); fi
+    exec qemu-system-aarch64 -machine virt -cpu "$CPU" "${ACCEL[@]}" -m 2048 -smp 2 -nographic \
         -kernel "$IMAGES/Image" -append 'root=/dev/vda rw rootwait console=ttyAMA0' \
         -drive "file=$STATE/root.qcow2,if=none,id=root,format=qcow2" -device virtio-blk-device,drive=root \
         -netdev "user,id=net0,hostfwd=tcp:$FORWARD:2222-:22" -device virtio-net-device,netdev=net0

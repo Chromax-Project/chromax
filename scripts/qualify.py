@@ -74,22 +74,25 @@ class Guest:
         self.log.close()
 
 
-def qemu_command(arch, images, rootfs, firmware=False):
+def qemu_command(arch, images, rootfs, firmware=False, accelerator="tcg", firmware_path=None):
     common = ["-m", "2048", "-smp", "2", "-nographic", "-no-reboot",
               "-netdev", "user,id=net0,hostfwd=tcp:127.0.0.1:22222-:22"]
     if arch == "aarch64":
         command = ["qemu-system-aarch64", "-machine", "virt", "-cpu", "cortex-a72", *common,
                    "-device", "virtio-net-device,netdev=net0", "-drive", f"file={rootfs},if=none,id=root,format=raw",
                    "-device", "virtio-blk-device,drive=root"]
+        if accelerator != "tcg":
+            command[command.index("cortex-a72")] = "host"
+            command += ["-accel", accelerator]
         if firmware:
-            command += ["-bios", "/usr/share/qemu-efi-aarch64/QEMU_EFI.fd"]
+            command += ["-bios", str(firmware_path or "/usr/share/qemu-efi-aarch64/QEMU_EFI.fd")]
         else:
             command += ["-kernel", str(images / "Image"), "-append", "console=ttyAMA0 root=/dev/vda rw rootwait"]
     else:
         command = ["qemu-system-x86_64", "-machine", "q35", "-cpu", "max", *common,
                    "-device", "virtio-net-pci,netdev=net0", "-drive", f"file={rootfs},if=virtio,format=raw"]
         if firmware:
-            command += ["-bios", "/usr/share/OVMF/OVMF_CODE_4M.fd"]
+            command += ["-bios", str(firmware_path or "/usr/share/OVMF/OVMF_CODE_4M.fd")]
         else:
             command += ["-kernel", str(images / "bzImage"), "-append", "console=ttyS0 root=/dev/vda rw rootwait"]
     return command
@@ -104,17 +107,19 @@ def main():
     parser.add_argument("--model-sha256")
     parser.add_argument("--ssh-key", type=Path)
     parser.add_argument("--uefi", action="store_true")
+    parser.add_argument("--accelerator", choices=("tcg", "hvf", "kvm"), default="tcg")
+    parser.add_argument("--firmware-path", type=Path)
     args = parser.parse_args()
     if args.rootfs.resolve() in ((args.images / "rootfs.ext4").resolve(), (args.images / "chromax.img").resolve()):
         parser.error("Qualification requires a disposable working copy, never a release master")
     args.evidence.mkdir(parents=True, exist_ok=True)
-    results = {"architecture": args.architecture, "firmware": "UEFI" if args.uefi else "direct", "checks": [], "started": int(time.time())}
+    results = {"architecture": args.architecture, "accelerator": args.accelerator, "firmware": "UEFI" if args.uefi else "direct", "checks": [], "started": int(time.time())}
     guest = None
     def record(name, output=None):
         results["checks"].append({"name": name, "passed": True, **({"output": output} if output is not None else {})})
         print("PASS " + name, flush=True)
     try:
-        command = qemu_command(args.architecture, args.images, args.rootfs, args.uefi)
+        command = qemu_command(args.architecture, args.images, args.rootfs, args.uefi, args.accelerator, args.firmware_path)
         guest = Guest(command, args.evidence / "boot-1.log")
         guest.wait(rb"\r?\n\$ ", timeout=240)
         guest.command("test \"$(id -u)\" = 1000 && test \"$(uname -r)\" = 6.18.60", timeout=30)
@@ -162,7 +167,7 @@ def main():
             guest.command(f"sudo -n chromaxctl apply {plan} --confirm {plan}")
             guest.command("for i in $(seq 1 120); do curl -fsS http://127.0.0.1:8081/health >/tmp/inference-health && break; sleep 1; done; grep -q ok /tmp/inference-health", timeout=150)
             # Bound integration generation while still executing the actual model.
-            output = guest.command("python3 -c 'import urllib.request,json; b=json.dumps({\"messages\":[{\"role\":\"user\",\"content\":\"Say hello in one short sentence.\"}],\"max_tokens\":24,\"temperature\":0,\"stream\":False}).encode(); r=urllib.request.Request(\"http://127.0.0.1:8081/v1/chat/completions\",b,{\"Content-Type\":\"application/json\"}); d=json.load(urllib.request.urlopen(r,timeout=120)); a=d[\"choices\"][0][\"message\"][\"content\"]; assert a.strip(); print(\"ACTUAL_MODEL_RESPONSE=\"+a)'", timeout=140)
+            output = guest.command("python3 -c 'import urllib.request,json; b=json.dumps({\"messages\":[{\"role\":\"user\",\"content\":\"Say hello in one short sentence.\"}],\"max_tokens\":24,\"chat_template_kwargs\":{\"enable_thinking\":False},\"temperature\":0,\"stream\":False}).encode(); r=urllib.request.Request(\"http://127.0.0.1:8081/v1/chat/completions\",b,{\"Content-Type\":\"application/json\"}); d=json.load(urllib.request.urlopen(r,timeout=120)); a=d[\"choices\"][0][\"message\"][\"content\"]; assert a.strip(); print(\"ACTUAL_MODEL_RESPONSE=\"+a)'", timeout=140)
             record("actual local GGUF inference", output[-2500:])
             output = guest.command("ai ask 'Say hello briefly.'", timeout=320)
             record("integrated assistant with actual local model", output[-2500:])

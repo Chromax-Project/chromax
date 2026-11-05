@@ -16,6 +16,21 @@ in configurations rather than resolved dynamically at build time.
 
 ## Alternatives considered
 
+Subsequent qualification found that the 135M fixture could produce text but
+misclassified a hostname-change request as a network restart. That pending plan
+was not applied. Semantic intent qualification therefore uses the publisher's
+[Qwen3-0.6B Q8_0 artifact](https://huggingface.co/Qwen/Qwen3-0.6B-GGUF), revision
+`23749fefcc72300e3a2ad315e1317431b06b590a`, SHA-256
+`9465e63a22add5354d9bb4b99e90117043c7124007664907259bd16d043bb031`,
+639,446,688 bytes, declared Apache-2.0. Local API calls disable optional thinking
+mode to reserve the response budget for the answer or typed plan. This does not
+make model proposals authoritative; local review remains required.
+
+[QEMU's accelerator documentation](https://www.qemu.org/docs/master/system/introduction.html)
+lists HVF for macOS Arm hosts. Native ARM qualification can use HVF rather than
+TCG; reports record the accelerator so emulated and accelerated checks are not
+mistaken for equivalent performance measurements.
+
 Linux From Scratch provides an educational manual build path but would require
 maintaining equivalent build orchestration and source tracking before repeatable
 image production. Yocto offers a powerful layer ecosystem at substantially

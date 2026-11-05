@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 from urllib.error import URLError, HTTPError
 from urllib.request import Request, build_opener, HTTPRedirectHandler, ProxyHandler
+from urllib.parse import urlparse
 from .common import ChromaxError
 
 SYSTEM_PROMPT = """You are Chromax, a Linux system assistant. Use the snapshot to answer briefly.
@@ -57,6 +58,8 @@ def _complete(messages, config, response_format=None):
         headers["Authorization"] = "Bearer " + keyfile.read_text().strip()
     body = {"model": config["model"], "messages": messages,
             "max_tokens": config["max_tokens"], "temperature": 0.2, "stream": False}
+    if urlparse(config["endpoint"]).hostname in ("localhost", "127.0.0.1", "::1"):
+        body["chat_template_kwargs"] = {"enable_thinking": False}
     if response_format is not None:
         body["response_format"] = response_format
     req = Request(config["endpoint"].rstrip("/") + "/chat/completions",
