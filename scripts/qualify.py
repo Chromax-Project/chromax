@@ -8,6 +8,7 @@ from pathlib import Path
 import re
 import secrets
 import shlex
+import shutil
 import subprocess
 import sys
 import threading
@@ -62,21 +63,35 @@ class Guest:
         return output
 
     def shutdown(self):
+        clean = True
         if self.process.poll() is None:
-            self.process.stdin.write(b"sudo -n chromaxctl poweroff\n")
-            self.process.stdin.flush()
+            try:
+                self.process.stdin.write(b"\x03sudo -n chromaxctl poweroff\n")
+                self.process.stdin.flush()
+            except BrokenPipeError:
+                pass
             try:
                 self.process.wait(timeout=30)
             except subprocess.TimeoutExpired:
+                clean = False
                 self.process.terminate()
-                self.process.wait(timeout=10)
+                try:
+                    self.process.wait(timeout=10)
+                except subprocess.TimeoutExpired:
+                    self.process.kill()
+                    try:
+                        self.process.wait(timeout=5)
+                    except subprocess.TimeoutExpired:
+                        pass  # A host I/O stall must not discard the failure report.
         self.thread.join(timeout=2)
-        self.log.close()
+        if not self.thread.is_alive():
+            self.log.close()
+        return clean
 
 
-def qemu_command(arch, images, rootfs, firmware=False, accelerator="tcg", firmware_path=None, disk_bus="virtio"):
+def qemu_command(arch, images, rootfs, firmware=False, accelerator="tcg", firmware_path=None, disk_bus="virtio", ssh_port=22222, firmware_vars=None):
     common = ["-m", "2048", "-smp", "2", "-nographic", "-no-reboot",
-              "-netdev", "user,id=net0,hostfwd=tcp:127.0.0.1:22222-:22"]
+              "-netdev", f"user,id=net0,hostfwd=tcp:127.0.0.1:{ssh_port}-:22"]
     if arch == "aarch64":
         command = ["qemu-system-aarch64", "-machine", "virt", "-cpu", "cortex-a72", *common,
                    "-device", "virtio-net-device,netdev=net0", "-drive", f"file={rootfs},if=none,id=root,format=raw",
@@ -104,7 +119,8 @@ def qemu_command(arch, images, rootfs, firmware=False, accelerator="tcg", firmwa
             command[command.index("max")] = "host"
             command += ["-accel", accelerator]
         if firmware:
-            command += ["-bios", str(firmware_path or "/usr/share/OVMF/OVMF_CODE_4M.fd")]
+            command += ["-drive", f"if=pflash,unit=0,format=raw,readonly=on,file={firmware_path or '/usr/share/OVMF/OVMF_CODE_4M.fd'}",
+                        "-drive", f"if=pflash,unit=1,format=raw,file={firmware_vars}"]
         else:
             command += ["-kernel", str(images / "bzImage"), "-append", f"console=ttyS0 root={root_device} rw rootwait"]
     return command
@@ -121,12 +137,18 @@ def main():
     parser.add_argument("--uefi", action="store_true")
     parser.add_argument("--accelerator", choices=("tcg", "hvf", "kvm"), default="tcg")
     parser.add_argument("--firmware-path", type=Path)
+    parser.add_argument("--firmware-vars", type=Path, help="x86 UEFI variable template; a disposable copy is used")
     parser.add_argument("--disk-bus", choices=("virtio", "nvme", "sata"), default="virtio")
+    parser.add_argument("--ssh-port", type=int, default=22222)
     args = parser.parse_args()
     if args.architecture == "aarch64" and args.disk_bus != "virtio":
         parser.error("The ARM64 reference profile uses virtio storage")
     if args.rootfs.resolve() in ((args.images / "rootfs.ext4").resolve(), (args.images / "chromax.img").resolve()):
         parser.error("Qualification requires a disposable working copy, never a release master")
+    for master_name in ("rootfs.ext4", "chromax.img"):
+        master = args.images / master_name
+        if args.rootfs.exists() and master.exists() and args.rootfs.samefile(master):
+            parser.error("A hard link to the release master is not a disposable copy")
     args.evidence.mkdir(parents=True, exist_ok=True)
     results = {"architecture": args.architecture, "accelerator": args.accelerator, "disk_bus": args.disk_bus, "firmware": "UEFI" if args.uefi else "direct", "checks": [], "started": int(time.time())}
     master = args.images / ("chromax.img" if args.uefi else "rootfs.ext4")
@@ -136,12 +158,17 @@ def main():
             digest.update(chunk)
     results["source_image_sha256"] = digest.hexdigest()
     results["model_sha256"] = args.model_sha256
+    results["qemu_version"] = subprocess.check_output([f"qemu-system-{args.architecture}", "--version"], text=True).splitlines()[0]
+    firmware_vars = None
+    if args.uefi and args.architecture == "x86_64":
+        firmware_vars = args.evidence / "firmware-vars.fd"
+        shutil.copyfile(args.firmware_vars or "/usr/share/OVMF/OVMF_VARS_4M.fd", firmware_vars)
     guest = None
     def record(name, output=None):
         results["checks"].append({"name": name, "passed": True, **({"output": output} if output is not None else {})})
         print("PASS " + name, flush=True)
     try:
-        command = qemu_command(args.architecture, args.images, args.rootfs, args.uefi, args.accelerator, args.firmware_path, args.disk_bus)
+        command = qemu_command(args.architecture, args.images, args.rootfs, args.uefi, args.accelerator, args.firmware_path, args.disk_bus, args.ssh_port, firmware_vars)
         guest = Guest(command, args.evidence / "boot-1.log")
         guest.wait(rb"\r?\n\$ ", timeout=240)
         guest.command("test \"$(id -u)\" = 1000 && test \"$(uname -r)\" = 6.18.60", timeout=30)
@@ -162,7 +189,7 @@ def main():
         record("review apply and replay rejection")
         if args.ssh_key:
             guest.command("sudo -n chromaxctl ssh-key \"$(cat /home/chromax/qualification/id_ed25519.pub)\"")
-            ssh = ["ssh", "-i", str(args.ssh_key), "-p", "22222", "-o", "BatchMode=yes", "-o", "StrictHostKeyChecking=accept-new",
+            ssh = ["ssh", "-i", str(args.ssh_key), "-p", str(args.ssh_port), "-o", "BatchMode=yes", "-o", "StrictHostKeyChecking=accept-new",
                    "-o", f"UserKnownHostsFile={args.evidence / 'known_hosts'}", "-o", "ConnectTimeout=20"]
             out = subprocess.check_output([*ssh, "chromax@127.0.0.1", "id -u"], stderr=subprocess.STDOUT, timeout=30)
             if not out.decode().strip().endswith("1000"):
@@ -183,7 +210,9 @@ def main():
         record("guest Ed25519 install upgrade execution and rollback")
         if args.model_sha256:
             guest.command("sudo -n chromaxctl config --endpoint http://127.0.0.1:8081/v1 --model local --max-tokens 64 --timeout 300")
-            guest.command(f"sudo -n chromaxctl model add {fixture}/model.gguf --sha256 {shlex.quote(args.model_sha256)}", timeout=60)
+            # The fixture is copied and hashed inside the guest. Slow external
+            # disks under concurrent image verification need an I/O-sized bound.
+            guest.command(f"sudo -n chromaxctl model add {fixture}/model.gguf --sha256 {shlex.quote(args.model_sha256)}", timeout=300)
             output = guest.command("chromaxctl plan service-restart inference")
             plan = re.search(r'"id": "([a-f0-9]{24})"', output).group(1)
             guest.command(f"sudo -n chromaxctl apply {plan} --confirm {plan}")
@@ -198,7 +227,8 @@ def main():
                 raise RuntimeError("The local model did not translate the hostname intent correctly")
             record("actual model translates natural-language intent into a pending plan", output[-2000:])
         guest.command("printf 'persistent-state\\n' > /home/chromax/persistence-proof && sync")
-        guest.shutdown()
+        if not guest.shutdown():
+            raise RuntimeError("Guest did not power off cleanly before the persistence reboot")
         guest = Guest(command, args.evidence / "boot-2.log")
         guest.wait(rb"\r?\n\$ ", timeout=240)
         guest.command("test \"$(hostname)\" = chromax-qualified && grep -q persistent-state /home/chromax/persistence-proof && chromaxctl package run hello")

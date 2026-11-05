@@ -9,7 +9,11 @@ if [ -f "$WORK/evidence-direct/qualification.json" ]; then
     mv "$WORK/evidence-direct" "$WORK/evidence-direct-$(date -u +%Y%m%dT%H%M%SZ)"
 fi
 mkdir -p "$WORK/fixtures" "$WORK/evidence-direct"
-cp --sparse=always "$IMAGES/rootfs.ext4" "$WORK/rootfs.ext4"
+if [ "${CHROMAX_PREPARED_ROOTFS:-0}" = 1 ]; then
+    test -f "$WORK/rootfs.ext4"
+else
+    cp --sparse=always "$IMAGES/rootfs.ext4" "$WORK/rootfs.ext4"
+fi
 if [ ! -f "$WORK/id_ed25519" ]; then ssh-keygen -q -t ed25519 -N '' -f "$WORK/id_ed25519"; fi
 cp "$WORK/id_ed25519.pub" "$WORK/fixtures/"
 openssl genpkey -algorithm ED25519 -out "$WORK/publisher-private.pem"
@@ -23,7 +27,9 @@ for VERSION in 1.0.0 2.0.0; do
     openssl pkeyutl -sign -inkey "$WORK/publisher-private.pem" -rawin \
         -in "$WORK/fixtures/hello-$VERSION.cxpk" -out "$WORK/fixtures/hello-$VERSION.cxpk.sig"
 done
-if [ -n "${CHROMAX_TEST_MODEL:-}" ]; then cp "$CHROMAX_TEST_MODEL" "$WORK/fixtures/model.gguf"; fi
+if [ -n "${CHROMAX_TEST_MODEL:-}" ]; then
+    ln -f "$CHROMAX_TEST_MODEL" "$WORK/fixtures/model.gguf" 2>/dev/null || cp "$CHROMAX_TEST_MODEL" "$WORK/fixtures/model.gguf"
+fi
 mkdir -p /mnt/qualification
 mount -o loop "$WORK/rootfs.ext4" /mnt/qualification
 trap 'umount /mnt/qualification' EXIT
