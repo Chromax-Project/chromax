@@ -7,6 +7,7 @@ CHROMAX_DEPENDENCIES = python3
 
 define CHROMAX_INSTALL_TARGET_CMDS
 	mkdir -p $(TARGET_DIR)/usr/lib/chromax $(TARGET_DIR)/usr/bin
+	rm -rf $(TARGET_DIR)/usr/lib/chromax/chromax
 	cp -a $(@D)/chromax $(TARGET_DIR)/usr/lib/chromax/
 	$(INSTALL) -m 0755 $(@D)/chromaxctl $(TARGET_DIR)/usr/bin/chromaxctl
 	$(INSTALL) -m 0755 $(@D)/chromax-install $(TARGET_DIR)/usr/bin/chromax-install

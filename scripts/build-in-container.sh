@@ -38,4 +38,7 @@ sudo -u builder make -s -C "$BR" O="$OUT" BR2_EXTERNAL=/work/repo BR2_DL_DIR=/wo
 BR2_DL_DIR=/work/dl python3 "$BR/utils/generate-cyclonedx" < "/storage/artifacts/$CHROMAX_ARCH/packages.json" > "/storage/artifacts/$CHROMAX_ARCH/sbom.cdx.json"
 sudo -u builder make -C "$BR" O="$OUT" BR2_EXTERNAL=/work/repo BR2_DL_DIR=/work/dl legal-info
 tar -C "$OUT" -cf "/storage/artifacts/$CHROMAX_ARCH/legal-info.tar" legal-info
-find "/storage/artifacts/$CHROMAX_ARCH" -maxdepth 1 -type f ! -name SHA256SUMS -exec sha256sum '{}' \; > "/storage/artifacts/$CHROMAX_ARCH/SHA256SUMS"
+(
+    cd "/storage/artifacts/$CHROMAX_ARCH"
+    find . -maxdepth 1 -type f ! -name SHA256SUMS -exec sha256sum '{}' \; | sort > SHA256SUMS
+)

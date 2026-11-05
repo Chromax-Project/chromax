@@ -16,6 +16,8 @@ EOF
 if grep -q '^BR2_aarch64=y' "$BR2_CONFIG"; then CONSOLE=ttyAMA0; else CONSOLE=ttyS0; fi
 sed -i "s@^[^#].*getty.*$CONSOLE.*@$CONSOLE::respawn:/sbin/agetty -n -l /usr/bin/chromax-console -L $CONSOLE 115200 vt100@" "$TARGET/etc/inittab"
 chmod 0440 "$TARGET/etc/sudoers"
+# Remove rules appended by early development images; the drop-in is canonical.
+sed -i '/^chromax ALL=(root) NOPASSWD: \/usr\/bin\/chromaxctl$/d; /^chromax ALL=(root) NOPASSWD: \/usr\/bin\/chromax-install$/d' "$TARGET/etc/sudoers"
 chmod 0440 "$TARGET/etc/sudoers.d/chromax"
 cat > "$TARGET/etc/profile.d/chromax.sh" <<'EOF'
 export PYTHONPATH=/usr/lib/chromax
