@@ -11,7 +11,7 @@ for name in chromax.img rootfs.ext4; do
     test -f "$SOURCE/$name"
     zstd -T2 -10 -f "$SOURCE/$name" -o "$DEST/chromax-0.1.0-$ARCH-$name.zst"
 done
-for name in Image bzImage buildroot.config packages.json sbom.cdx.json chromax-source.tar.gz buildroot-2026.08.1.tar.xz legal-info.tar; do
+for name in Image bzImage buildroot.config linux.config busybox.config packages.json sbom.cdx.json chromax-source.tar.gz buildroot-2026.08.1.tar.xz legal-info.tar; do
     if [ -f "$SOURCE/$name" ]; then cp "$SOURCE/$name" "$DEST/$PREFIX-$name"; fi
 done
 if [ -f "$STORAGE/keys/release.pub" ]; then cp "$STORAGE/keys/release.pub" "$DEST/$PREFIX-release.pub"; fi

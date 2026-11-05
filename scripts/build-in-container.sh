@@ -42,6 +42,8 @@ cp -a "$OUT/images/." "/storage/artifacts/$CHROMAX_ARCH/"
 tar -C /work/repo -czf "/storage/artifacts/$CHROMAX_ARCH/chromax-source.tar.gz" .
 cp "$ARCHIVE" "/storage/artifacts/$CHROMAX_ARCH/buildroot-$VERSION.tar.xz"
 cp "$OUT/.config" "/storage/artifacts/$CHROMAX_ARCH/buildroot.config"
+cp "$OUT/build/linux-6.18.60/.config" "/storage/artifacts/$CHROMAX_ARCH/linux.config"
+cp "$OUT/build/busybox-1.38.0/.config" "/storage/artifacts/$CHROMAX_ARCH/busybox.config"
 sudo -u builder make -s -C "$BR" O="$OUT" BR2_EXTERNAL=/work/repo BR2_DL_DIR=/work/dl show-info > "/storage/artifacts/$CHROMAX_ARCH/packages.json"
 BR2_DL_DIR=/work/dl python3 "$BR/utils/generate-cyclonedx" < "/storage/artifacts/$CHROMAX_ARCH/packages.json" > "/storage/artifacts/$CHROMAX_ARCH/sbom.cdx.json"
 sudo -u builder make -C "$BR" O="$OUT" BR2_EXTERNAL=/work/repo BR2_DL_DIR=/work/dl legal-info
