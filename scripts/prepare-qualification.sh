@@ -9,6 +9,13 @@ if [ -f "$WORK/evidence-direct/qualification.json" ]; then
     mv "$WORK/evidence-direct" "$WORK/evidence-direct-$(date -u +%Y%m%dT%H%M%SZ)"
 fi
 mkdir -p "$WORK/fixtures" "$WORK/evidence-direct"
+BUILD=(env PYTHONPATH=/repo/src)
+if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != root ]; then
+    # Keep fixture construction unprivileged on native Linux hosts. The
+    # surrounding mount/provision operations still require the root test driver.
+    chown "$SUDO_USER" "$WORK" "$WORK/fixtures"
+    BUILD=(sudo -u "$SUDO_USER" env PYTHONPATH=/repo/src)
+fi
 if [ "${CHROMAX_PREPARED_ROOTFS:-0}" = 1 ]; then
     test -f "$WORK/rootfs.ext4"
 else
@@ -22,7 +29,7 @@ for VERSION in 1.0.0 2.0.0; do
     mkdir -p "$WORK/hello-$VERSION"
     printf '#!/bin/sh\nprintf "hello-%s\\n"\n' "$VERSION" > "$WORK/hello-$VERSION/hello"
     chmod 0755 "$WORK/hello-$VERSION/hello"
-    PYTHONPATH=/repo/src python3 -m chromax.cli package build "$WORK/hello-$VERSION" "$WORK/fixtures/hello-$VERSION.cxpk" \
+    "${BUILD[@]}" python3 -m chromax.cli package build "$WORK/hello-$VERSION" "$WORK/fixtures/hello-$VERSION.cxpk" \
         --name hello --version "$VERSION" --architecture all --entrypoint hello
     openssl pkeyutl -sign -inkey "$WORK/publisher-private.pem" -rawin \
         -in "$WORK/fixtures/hello-$VERSION.cxpk" -out "$WORK/fixtures/hello-$VERSION.cxpk.sig"
