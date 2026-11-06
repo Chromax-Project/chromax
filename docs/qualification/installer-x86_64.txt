@@ -1,0 +1,10 @@
+{
+  "target": "/dev/loop2",
+  "target_bytes": 4430254080,
+  "image_bytes": 4430254080,
+  "sha256": "da220b49594f273f6157bcc4de2f282f35aa13998bec749c7aca6d2b1f298979",
+  "effect": "Erase target disk contents and install Chromax"
+}
+Partition table reread deferred; unplug/replug the disk before use.
+Installed and verified. Boot the target with UEFI firmware.
+If the target is larger, relocate the backup GPT header with sgdisk -e before growing the root partition.

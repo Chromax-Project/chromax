@@ -23,12 +23,16 @@ if [ "$ARCH" = aarch64 ]; then
     CPU=cortex-a72
     ACCEL=()
     if [ "$(uname -s)" = Darwin ] && [ "$(uname -m)" = arm64 ]; then CPU=host; ACCEL=(-accel hvf); fi
+    if [ "$(uname -s)" = Linux ] && [ "$(uname -m)" = aarch64 ] && [ -r /dev/kvm ] && [ -w /dev/kvm ]; then CPU=host; ACCEL=(-accel kvm); fi
     exec qemu-system-aarch64 -machine virt -cpu "$CPU" "${ACCEL[@]}" -m 2048 -smp 2 -nographic \
         -kernel "$IMAGES/Image" -append 'root=/dev/vda rw rootwait console=ttyAMA0' \
         -drive "file=$STATE/root.qcow2,if=none,id=root,format=qcow2" -device virtio-blk-device,drive=root \
         -netdev "user,id=net0,hostfwd=tcp:$FORWARD:2222-:22" -device virtio-net-device,netdev=net0
 else
-    exec qemu-system-x86_64 -machine q35 -cpu max -m 2048 -smp 2 -nographic \
+    CPU=max
+    ACCEL=()
+    if [ "$(uname -s)" = Linux ] && [ "$(uname -m)" = x86_64 ] && [ -r /dev/kvm ] && [ -w /dev/kvm ]; then CPU=host; ACCEL=(-accel kvm); fi
+    exec qemu-system-x86_64 -machine q35 -cpu "$CPU" "${ACCEL[@]}" -m 2048 -smp 2 -nographic \
         -kernel "$IMAGES/bzImage" -append 'root=/dev/vda rw rootwait console=ttyS0' \
         -drive "file=$STATE/root.qcow2,if=virtio,format=qcow2" \
         -netdev "user,id=net0,hostfwd=tcp:$FORWARD:2222-:22" -device virtio-net-pci,netdev=net0

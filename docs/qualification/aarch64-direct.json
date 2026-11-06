@@ -1,0 +1,70 @@
+{
+  "architecture": "aarch64",
+  "accelerator": "hvf",
+  "disk_bus": "virtio",
+  "firmware": "direct",
+  "checks": [
+    {
+      "name": "boot and unprivileged session",
+      "passed": true
+    },
+    {
+      "name": "native management tools",
+      "passed": true,
+      "output": "chromaxctl status && chromaxctl doctor; _cx=$?; printf '\\n__CHROMAX_4a4e0e3786\r\r\ndf8be6_%s\\n' \"$_cx\"\r\n{\r\n  \"hostname\": \"chromax\",\r\n  \"kernel\": \"6.18.60\",\r\n  \"architecture\": \"aarch64\",\r\n  \"cpus\": 2,\r\n  \"load\": [\r\n    0.3076171875,\r\n    0.06591796875,\r\n    0.021484375\r\n  ],\r\n  \"memory\": {\r\n    \"MemTotal\": 2089762816,\r\n    \"MemAvailable\": 1994465280\r\n  },\r\n  \"disk\": {\r\n    \"total\": 4152066048,\r\n    \"used\": 761565184,\r\n    \"free\": 3158978560\r\n  },\r\n  \"uptime_seconds\": 10.69,\r\n  \"network\": [\r\n    {\r\n      \"ifindex\": 1,\r\n      \"ifname\": \"lo\",\r\n      \"flags\": [\r\n        \"LOOPBACK\",\r\n        \"UP\",\r\n        \"LOWER_UP\"\r\n      ],\r\n      \"mtu\": 65536,\r\n      \"qdisc\": \"noqueue\",\r\n      \"operstate\": \"UNKNOWN\",\r\n      \"group\": \"default\",\r\n      \"txqlen\": 1000,\r\n      \"link_type\": \"loopback\",\r\n      \"address\": \"00:00:00:00:00:00\",\r\n      \"broadcast\": \"00:00:00:00:00:00\",\r\n      \"addr_info\": [\r\n        {\r\n          \"family\": \"inet\",\r\n          \"local\": \"127.0.0.1\",\r\n          \"prefixlen\": 8,\r\n          \"scope\": \"host\",\r\n          \"label\": \"lo\",\r\n          \"valid_life_time\": 4294967295,\r\n          \"preferred_life_time\": 4294967295\r\n        },\r\n        {\r\n          \"family\": \"inet6\",\r\n          \"local\": \"::1\",\r\n          \"prefixlen\": 128,\r\n          \"scope\": \"host\",\r\n          \"protocol\": \"kernel_lo\",\r\n          \"valid_life_time\": 4294967295,\r\n          \"preferred_life_time\": 4294967295\r\n        }\r\n      ]\r\n    },\r\n    {\r\n      \"ifindex\": 2,\r\n      \"ifname\": \"dummy0\",\r\n      \"flags\": [\r\n        \"BROADCAST\",\r\n        \"NOARP\"\r\n      ],\r\n      \"mtu\": 1500,\r\n      \"qdisc\": \"noop\",\r\n      \"operstate\": \"DOWN\",\r\n      \"group\": \"default\",\r\n      \"txqlen\": 1000,\r\n      \"link_type\": \"ether\",\r\n      \"address\": \"8e:b8:eb:f1:44:08\",\r\n      \"broadcast\": \"ff:ff:ff:ff:ff:ff\",\r\n      \"addr_info\": []\r\n    },\r\n    {\r\n      \"ifindex\": 3,\r\n      \"ifname\": \"eth0\",\r\n      \"flags\": [\r\n        \"BROADCAST\",\r\n        \"MULTICAST\",\r\n        \"UP\",\r\n        \"LOWER_UP\"\r\n      ],\r\n      \"mtu\": 1500,\r\n      \"qdisc\": \"pfifo_fast\",\r\n      \"operstate\": \"UP\",\r\n      \"group\": \"default\",\r\n      \"txqlen\": 1000,\r\n      \"link_type\": \"ether\",\r\n      \"address\": \"52:54:00:12:34:56\",\r\n      \"broadcast\": \"ff:ff:ff:ff:ff:ff\",\r\n      \"addr_info\": [\r\n        {\r\n          \"family\": \"inet\",\r\n          \"local\": \"10.0.2.15\",\r\n          \"prefixlen\": 24,\r\n          \"broadcast\": \"10.0.2.255\",\r\n          \"scope\": \"global\",\r\n          \"label\": \"eth0\",\r\n          \"valid_life_time\": 4294967295,\r\n          \"preferred_life_time\": 4294967295\r\n        },\r\n        {\r\n          \"family\": \"inet6\",\r\n          \"local\": \"fec0::5054:ff:fe12:3456\",\r\n          \"prefixlen\": 64,\r\n          \"scope\": \"site\",\r\n          \"dynamic\": true,\r\n          \"mngtmpaddr\": true,\r\n          \"protocol\": \"kernel_ra\",\r\n          \"valid_life_time\": 86396,\r\n          \"preferred_life_time\": 14396\r\n        },\r\n        {\r\n          \"family\": \"inet6\",\r\n          \"local\": \"fe80::5054:ff:fe12:3456\",\r\n          \"prefixlen\": 64,\r\n          \"scope\": \"link\",\r\n          \"protocol\": \"kernel_ll\",\r\n          \"valid_life_time\": 4294967295,\r\n          \"preferred_life_time\": 4294967295\r\n        }\r\n      ]\r\n    },\r\n    {\r\n      \"ifindex\": 4,\r\n      \"link\": null,\r\n      \"ifname\": \"sit0\",\r\n      \"flags\": [\r\n        \"NOARP\"\r\n      ],\r\n      \"mtu\": 1480,\r\n      \"qdisc\": \"noop\",\r\n      \"operstate\": \"DOWN\",\r\n      \"group\": \"default\",\r\n      \"txqlen\": 1000,\r\n      \"link_type\": \"sit\",\r\n      \"address\": \"0.0.0.0\",\r\n      \"broadcast\": \"0.0.0.0\",\r\n      \"addr_info\": []\r\n    }\r\n  ],\r\n  \"time\": 1793922445\r\n}\r\n[\r\n  {\r\n    \"name\": \"state directory\",\r\n    \"ok\": true\r\n  },\r\n  {\r\n    \"name\": \"console service token\",\r\n    \"ok\": false,\r\n    \"detail\": \"Recover a stopped console with sudo chromaxctl recover\"\r\n  },\r\n  {\r\n    \"name\": \"inference binary\",\r\n    \"ok\": true\r\n  },\r\n  {\r\n    \"name\": \"TLS trust store\",\r\n    \"ok\": true\r\n  },\r\n  {\r\n    \"name\": \"AI configuration\",\r\n    \"ok\": true,\r\n    \"endpoint\": \"http://127.0.0.1:8081/v1\"\r\n  },\r\n  {\r\n    \"name\": \"local model\",\r\n    \"ok\": false,\r\n    \"detail\": \"Provision with sudo chromaxctl model add FILE --sha256 HASH\"\r\n  }\r\n]\r\n\r\n"
+    },
+    {
+      "name": "DHCP DNS and verified HTTPS",
+      "passed": true
+    },
+    {
+      "name": "authenticated guest HTTP API",
+      "passed": true
+    },
+    {
+      "name": "distributable image has no root password",
+      "passed": true
+    },
+    {
+      "name": "review apply and replay rejection",
+      "passed": true
+    },
+    {
+      "name": "SSH public key login and root rejection",
+      "passed": true
+    },
+    {
+      "name": "guest Ed25519 install upgrade execution and rollback",
+      "passed": true
+    },
+    {
+      "name": "actual local GGUF inference",
+      "passed": true,
+      "output": "python3 -c 'import urllib.request,json; b=json.dumps({\"messages\":[{\"role\":\"use\r\r\nr\",\"content\":\"Say hello in one short sentence.\"}],\"max_tokens\":24,\"chat_template\r\r\n_kwargs\":{\"enable_thinking\":False},\"temperature\":0,\"stream\":False}).encode(); r=\r\r\nurllib.request.Request(\"http://127.0.0.1:8081/v1/chat/completions\",b,{\"Content-T\r\r\nype\":\"application/json\"}); d=json.load(urllib.request.urlopen(r,timeout=120)); a\r\r\n=d[\"choices\"][0][\"message\"][\"content\"]; assert a.strip(); print(\"ACTUAL_MODEL_RE\r\r\nSPONSE=\"+a)'; _cx=$?; printf '\\n__CHROMAX_954195ec38c29765_%s\\n' \"$_cx\"\r\nACTUAL_MODEL_RESPONSE=Hello! How can I assist you today?\r\n\r\n"
+    },
+    {
+      "name": "integrated assistant with actual local model",
+      "passed": true,
+      "output": "ai ask 'Say hello briefly.'; _cx=$?; printf '\\n__CHROMAX_a20f1054c30a1bb7_%s\\n\r\r\n' \"$_cx\"\r\nHello! I'm Chromax, your Linux system assistant. Let me know if you need help with anything!\r\n\r\n"
+    },
+    {
+      "name": "actual model translates natural-language intent into a pending plan",
+      "passed": true,
+      "output": "ai propose 'Set the hostname to prism-test'; _cx=$?; printf '\\n__CHROMAX_53437\r\r\nb694517cd58_%s\\n' \"$_cx\"\r\nReview: Set hostname to prism-test\r\nApply: sudo chromaxctl apply a527236c045900d892e47169 --confirm a527236c045900d892e47169\r\n{\r\n  \"id\": \"a527236c045900d892e47169\",\r\n  \"action\": \"hostname\",\r\n  \"arguments\": {\r\n    \"name\": \"prism-test\"\r\n  },\r\n  \"summary\": \"Set hostname to prism-test\",\r\n  \"created\": 1793922549,\r\n  \"expires\": 1793923449,\r\n  \"status\": \"pending\"\r\n}\r\n\r\n"
+    },
+    {
+      "name": "hostname user data and app selection persist across reboot",
+      "passed": true
+    },
+    {
+      "name": "model persists and inference starts automatically after reboot",
+      "passed": true
+    }
+  ],
+  "started": 1793922372,
+  "source_image_sha256": "0e3c7520aa6ee6341b688213c8b5c7a721ec9670753352a2537beec41ea35fbc",
+  "model_sha256": "9465e63a22add5354d9bb4b99e90117043c7124007664907259bd16d043bb031",
+  "qemu_version": "QEMU emulator version 11.1.3",
+  "passed": true,
+  "finished": 1793922571
+}

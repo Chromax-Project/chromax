@@ -43,9 +43,10 @@ cp chromax-0.1.0-aarch64-Image images/aarch64/Image
 
 For x86-64, substitute `x86_64` and use the `bzImage` kernel asset. The script
 creates a persistent qcow2 overlay in `.cache/vm-ARCH`; the downloaded master
-stays unchanged. ARM guests use HVF automatically on Apple Silicon. Other hosts
-use QEMU's software emulation in this convenience script. Software inference can
-be slow. Stop the guest with `sudo chromaxctl poweroff`.
+stays unchanged. ARM guests use HVF automatically on Apple Silicon. Matching
+Linux hosts use KVM when the current user can access `/dev/kvm`; other hosts use
+QEMU's software emulation. Software inference can be slow. Stop the guest with
+`sudo chromaxctl poweroff`.
 
 The local console opens the `chromax` administrator account. It starts without
 passwords or SSH keys. Provision your own key before connecting remotely:

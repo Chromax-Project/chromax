@@ -34,10 +34,12 @@ session remains available for headless use. The ARM64 reference targets QEMU's
 ## Local AI
 
 Copy a trusted GGUF model into the guest or attach a separate model volume. Verify
-the publisher, revision, checksum, license and hardware requirements. The small
-SmolLM2 integration fixture described in `RESEARCH.md` is for testing and is not a
-strong administration model. A larger compatible model can be provisioned with
-the same interface.
+the publisher, revision, checksum, license and hardware requirements. The tested
+Qwen3-0.6B Q8_0 fixture and its exact checksum are in [the installation guide](INSTALL.md).
+The earlier 135M fixture could generate text but failed intent qualification.
+Neither fixture establishes reliable administration reasoning. A larger
+compatible model can be provisioned with the same interface, subject to storage
+and memory capacity.
 
 ```sh
 sudo chromaxctl model add /mnt/model.gguf --sha256 CHECKSUM

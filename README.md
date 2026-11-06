@@ -6,9 +6,11 @@ tools and inference engine are compiled from upstream source. No parent
 distribution's root filesystem or package repositories are used in the resulting
 image. Buildroot orchestrates the build; Ubuntu is only the isolated build host.
 
-**Development status:** implementation and release qualification are in progress.
-Do not infer a working image from a passing application test. Executed checks and
-remaining gates are recorded in [docs/STATUS.md](docs/STATUS.md).
+**Status: initial experimental alpha.** Source-built ARM64 and x86-64 images,
+installation instructions and qualification evidence are available in the
+[0.1.0 alpha release](https://github.com/Chromax-Project/chromax/releases/tag/v0.1.0-alpha.1).
+Start with the [download and installation guide](docs/INSTALL.md). Executed checks
+and the tested hardware scope are recorded in [docs/STATUS.md](docs/STATUS.md).
 
 ## What Chromax includes
 
