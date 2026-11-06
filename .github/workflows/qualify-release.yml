@@ -7,13 +7,17 @@ on:
         required: true
         default: v0.1.0-alpha.1
 permissions:
-  contents: read
+  # GitHub only exposes draft releases to credentials with repository write
+  # access. The token is used to fetch candidates, never to modify a release.
+  contents: write
 jobs:
   qualify:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
       - name: Install test tools and require hardware virtualization
         run: |
           sudo apt-get update -qq
